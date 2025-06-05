@@ -4,6 +4,7 @@ function s.initial_effect(c)
     --Xyz Summon procedure
     Xyz.AddProcedure(c,aux.FilterBoolFunction(Card.IsSetCard,0x107a),5,2)
     c:EnableReviveLimit()
+    
     --Alternative Xyz Summon using specific card (19712845)
     local e0=Effect.CreateEffect(c)
     e0:SetType(EFFECT_TYPE_FIELD)
@@ -14,6 +15,7 @@ function s.initial_effect(c)
     e0:SetOperation(s.xyzop)
     e0:SetValue(SUMMON_TYPE_XYZ)
     c:RegisterEffect(e0)
+    
     --Equip from GY
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
@@ -24,11 +26,14 @@ function s.initial_effect(c)
     e1:SetTarget(s.eqtg)
     e1:SetOperation(s.eqop)
     c:RegisterEffect(e1)
-    --Bounce
+    
+    --Quick Bounce Effect
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_TOHAND)
-    e2:SetType(EFFECT_TYPE_IGNITION)
+    e2:SetType(EFFECT_TYPE_QUICK_O)
+    e2:SetCode(EVENT_FREE_CHAIN)
+    e2:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMING_MAIN_END)
     e2:SetRange(LOCATION_MZONE)
     e2:SetCountLimit(1)
     e2:SetCondition(s.bcon)
@@ -37,6 +42,7 @@ function s.initial_effect(c)
     e2:SetOperation(s.bop)
     c:RegisterEffect(e2)
 end
+
 --Alternative Xyz Summon condition
 function s.xyzfilter(c)
     return c:IsFaceup() and c:IsCode(19712845) and c:GetEquipGroup():IsExists(Card.IsType,1,nil,TYPE_EQUIP)
@@ -60,6 +66,7 @@ function s.xyzop(e,tp,eg,ep,ev,re,r,rp,c,og,min,max)
         Duel.Overlay(c,Group.FromCards(tc))
     end
 end
+
 --Equip from GY
 function s.eqfilter(c)
     return c:IsType(TYPE_EQUIP) and c:IsAbleToChangeControler()
@@ -77,7 +84,8 @@ function s.eqop(e,tp,eg,ep,ev,re,r,rp)
         Duel.Equip(tp,tc,e:GetHandler())
     end
 end
---Bounce effect
+
+--Bounce effect (Quick Effect)
 function s.bcon(e,tp,eg,ep,ev,re,r,rp)
     return e:GetHandler():GetEquipGroup():IsExists(Card.IsType,1,nil,TYPE_EQUIP)
 end
