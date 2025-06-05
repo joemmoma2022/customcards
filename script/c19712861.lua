@@ -13,7 +13,7 @@ function s.initial_effect(c)
     e1:SetTarget(s.sptg)
     e1:SetOperation(s.spop)
     c:RegisterEffect(e1)
-    
+
     -- Level treated as 3 or 5 Warrior-type for "Ninja" Xyz Summon
     local e2=Effect.CreateEffect(c)
     e2:SetType(EFFECT_TYPE_SINGLE)
@@ -22,7 +22,7 @@ function s.initial_effect(c)
     e2:SetRange(LOCATION_MZONE)
     e2:SetValue(s.xyzlv)
     c:RegisterEffect(e2)
-    
+
     -- Change Race to Warrior while on field
     local e3=Effect.CreateEffect(c)
     e3:SetType(EFFECT_TYPE_SINGLE)
@@ -31,7 +31,7 @@ function s.initial_effect(c)
     e3:SetRange(LOCATION_MZONE)
     e3:SetValue(RACE_WARRIOR)
     c:RegisterEffect(e3)
-    
+
     -- Grant effect to Xyz monster summoned using this card as material
     local e4=Effect.CreateEffect(c)
     e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
@@ -39,7 +39,7 @@ function s.initial_effect(c)
     e4:SetCondition(s.efcon)
     e4:SetOperation(s.efop)
     c:RegisterEffect(e4)
-    
+
     -- This card is also treated as Machine-type everywhere
     local e5=Effect.CreateEffect(c)
     e5:SetType(EFFECT_TYPE_SINGLE)
@@ -93,12 +93,27 @@ function s.efop(e,tp,eg,ep,ev,re,r,rp)
     -- Effect: Once per turn, this card cannot be destroyed by battle
     local e1=Effect.CreateEffect(rc)
     e1:SetDescription(aux.Stringid(id,1))
-    e1:SetType(EFFECT_TYPE_SINGLE)
-    e1:SetCode(EFFECT_INDESTRUCTABLE_BATTLE)
-    e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE+EFFECT_FLAG_CLIENT_HINT)
-    e1:SetRange(LOCATION_MZONE)
-    e1:SetCountLimit(1,id+100) -- Unique per monster copy
-    e1:SetValue(1)
+    e1:SetType(EFFECT_TYPE_CONTINUOUS+EFFECT_TYPE_SINGLE)
+    e1:SetCode(EVENT_PRE_BATTLE_DAMAGE)
+    e1:SetCondition(s.indcon)
+    e1:SetOperation(s.indop)
+    e1:SetProperty(EFFECT_FLAG_CLIENT_HINT)
     e1:SetReset(RESET_EVENT+RESETS_STANDARD)
     rc:RegisterEffect(e1,true)
+end
+
+-- Condition for battle protection (OPT)
+function s.indcon(e,tp,eg,ep,ev,re,r,rp)
+    local c=e:GetHandler()
+    return ep==tp and c==Duel.GetBattleTarget() and not c:IsStatus(STATUS_BATTLE_DESTROYED)
+        and Duel.GetAttacker():IsControler(1-tp) and c:GetFlagEffect(id+1)==0
+end
+
+-- Operation: prevent destruction once per turn
+function s.indop(e,tp,eg,ep,ev,re,r,rp)
+    local c=e:GetHandler()
+    if not c:IsRelateToBattle() then return end
+    Duel.Hint(HINT_CARD,0,id)
+    c:RegisterFlagEffect(id+1,RESET_PHASE+PHASE_END,0,1)
+    Duel.ChangeBattleDamage(tp,0)
 end
