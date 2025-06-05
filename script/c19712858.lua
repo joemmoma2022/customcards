@@ -1,8 +1,13 @@
 local s,id=GetID()
 function s.initial_effect(c)
-    --Synchro Summon
+    -- Enable custom counters
+    c:EnableCounterPermit(0x111f) -- Rabbit counter
+    c:EnableCounterPermit(0x1120) -- Tank counter
+
+    -- Synchro Summon
     Synchro.AddProcedure(c,aux.FilterBoolFunction(Card.IsSetCard,0x27),1,1,Synchro.NonTuner(aux.FilterBoolFunction(Card.IsSetCard,0x27)),1,99)
     c:EnableReviveLimit()
+
 
     --Add Counters on Synchro Summon
     local e1=Effect.CreateEffect(c)
