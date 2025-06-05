@@ -40,18 +40,26 @@ function s.startop(e,tp,eg,ep,ev,re,r,rp)
 	e2:SetCode(EVENT_BATTLE_START)
 	e2:SetCondition(s.battlecon)
 	e2:SetOperation(s.battleop)
-	e2:SetCountLimit(1)
 	e2:SetProperty(EFFECT_FLAG_NO_TURN_RESET)
 	Duel.RegisterEffect(e2,tp)
 
-	-- Treat all Tuner monsters you control as "Genex Controller" for Synchro Summons
+	-- Reset the flag at the end of your turn only
 	local e3=Effect.CreateEffect(e:GetHandler())
-	e3:SetType(EFFECT_TYPE_FIELD)
-	e3:SetCode(EFFECT_CHANGE_CODE)
-	e3:SetTargetRange(LOCATION_MZONE,0)
-	e3:SetTarget(s.tunertarget)
-	e3:SetValue(68505803) -- Genex Controller's ID
+	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+	e3:SetCode(EVENT_PHASE+PHASE_END)
+	e3:SetCountLimit(1)
+	e3:SetCondition(function(ev) return Duel.GetTurnPlayer() == tp end)
+	e3:SetOperation(function(ev) Duel.ResetFlagEffect(tp,id) end)
 	Duel.RegisterEffect(e3,tp)
+
+	-- Treat all Tuner monsters you control as "Genex Controller" for Synchro Summons
+	local e4=Effect.CreateEffect(e:GetHandler())
+	e4:SetType(EFFECT_TYPE_FIELD)
+	e4:SetCode(EFFECT_CHANGE_CODE)
+	e4:SetTargetRange(LOCATION_MZONE,0)
+	e4:SetTarget(s.tunertarget)
+	e4:SetValue(68505803) -- Genex Controller's ID
+	Duel.RegisterEffect(e4,tp)
 end
 
 -- Tuner treatment condition
@@ -68,12 +76,16 @@ function s.battlecon(e,tp,eg,ep,ev,re,r,rp)
 	return tc:IsControler(tp) and tc:IsSetCard(0x2) and tc:IsType(TYPE_SYNCHRO)
 end
 
--- Battle operation
+-- Battle operation with once-per-turn limit
 function s.battleop(e,tp,eg,ep,ev,re,r,rp)
+	if Duel.GetFlagEffect(tp,id)~=0 then return end
 	local tc=Duel.GetAttacker()
 	local bc=Duel.GetAttackTarget()
 	if not bc then return end
 	if tc:IsControler(1-tp) then tc,bc=bc,tc end
-	Duel.Destroy(bc,REASON_EFFECT)
-	Duel.Damage(1-tp,1000,REASON_EFFECT)
+	if bc:IsRelateToBattle() then
+		Duel.Destroy(bc,REASON_EFFECT)
+		Duel.Damage(1-tp,1000,REASON_EFFECT)
+		Duel.RegisterFlagEffect(tp,id,RESET_PHASE+PHASE_END,0,1)
+	end
 end
