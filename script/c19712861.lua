@@ -83,6 +83,7 @@ end
 function s.efcon(e,tp,eg,ep,ev,re,r,rp)
     return r==REASON_XYZ and e:GetHandler():IsLocation(LOCATION_OVERLAY)
 end
+
 function s.efop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     local rc=c:GetReasonCard()
@@ -90,30 +91,32 @@ function s.efop(e,tp,eg,ep,ev,re,r,rp)
     if rc:GetFlagEffect(id)~=0 then return end
     rc:RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD,0,1)
 
-    -- Effect: Once per turn, this card cannot be destroyed by battle
+    -- Effect: This card cannot be destroyed by battle once per turn
     local e1=Effect.CreateEffect(rc)
     e1:SetDescription(aux.Stringid(id,1))
-    e1:SetType(EFFECT_TYPE_CONTINUOUS+EFFECT_TYPE_SINGLE)
-    e1:SetCode(EVENT_PRE_BATTLE_DAMAGE)
-    e1:SetCondition(s.indcon)
-    e1:SetOperation(s.indop)
-    e1:SetProperty(EFFECT_FLAG_CLIENT_HINT)
+    e1:SetType(EFFECT_TYPE_SINGLE)
+    e1:SetCode(EFFECT_INDESTRUCTABLE_BATTLE)
+    e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE+EFFECT_FLAG_CLIENT_HINT)
+    e1:SetRange(LOCATION_MZONE)
+    e1:SetValue(s.indval)
     e1:SetReset(RESET_EVENT+RESETS_STANDARD)
     rc:RegisterEffect(e1,true)
+
+    -- Reset the protection at the end of battle
+    local e2=Effect.CreateEffect(rc)
+    e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+    e2:SetCode(EVENT_BATTLE_END)
+    e2:SetOperation(function(_,tp) rc:ResetFlagEffect(id+1) end)
+    e2:SetReset(RESET_EVENT+RESETS_STANDARD)
+    Duel.RegisterEffect(e2,tp)
 end
 
--- Condition for battle protection (OPT)
-function s.indcon(e,tp,eg,ep,ev,re,r,rp)
+function s.indval(e,re,tp)
     local c=e:GetHandler()
-    local bc=Duel.GetAttackTarget()
-    return bc==c and c:GetFlagEffect(id+1)==0 and not c:IsStatus(STATUS_BATTLE_DESTROYED)
-end
-
--- Operation: prevent destruction once per turn
-function s.indop(e,tp,eg,ep,ev,re,r,rp)
-    local c=e:GetHandler()
-    if not c:IsRelateToBattle() then return end
-    Duel.Hint(HINT_CARD,0,id)
-    c:RegisterFlagEffect(id+1,RESET_PHASE+PHASE_END,0,1)
-    Duel.ChangeBattleDamage(tp,0)
+    if c:GetFlagEffect(id+1)==0 then
+        c:RegisterFlagEffect(id+1,RESET_PHASE+PHASE_END,0,1)
+        return true
+    else
+        return false
+    end
 end
