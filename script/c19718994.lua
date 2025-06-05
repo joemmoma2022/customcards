@@ -1,14 +1,22 @@
 --T.G. Evolution Drive (Skill Card)
 local s,id=GetID()
 function s.initial_effect(c)
-    aux.AddSkillProcedure(c,1,false,s.flipcon,s.flipop)
+    -- Flip and activate at the start of the Duel (before Draw Phase)
+    local e1=Effect.CreateEffect(c)
+    e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+    e1:SetCode(EVENT_PREDRAW)
+    e1:SetCountLimit(1)
+    e1:SetCondition(s.flipcon)
+    e1:SetOperation(s.flipop)
+    Duel.RegisterEffect(e1,0)
 end
 
 function s.flipcon(e,tp,eg,ep,ev,re,r,rp)
-    return Duel.GetTurnCount()==1
+    return Duel.GetTurnCount()==1 and Duel.GetTurnPlayer()==tp
 end
 
 function s.flipop(e,tp,eg,ep,ev,re,r,rp)
+    local c=e:GetHandler()
     Duel.Hint(HINT_SKILL_FLIP,tp,id|0x10000000)
     Duel.Hint(HINT_SKILL_FLIP,tp,id|0x20000000)
 
@@ -20,14 +28,14 @@ function s.flipop(e,tp,eg,ep,ev,re,r,rp)
     local token=Duel.CreateToken(tp,19712858)
     Duel.SendtoDeck(token,nil,SEQ_DECKTOP,REASON_RULE)
 
-    -- Register passive effect
-    local e1=Effect.CreateEffect(e:GetHandler())
-    e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-    e1:SetCode(EVENT_ADJUST)
-    e1:SetCondition(s.passivecon)
-    e1:SetOperation(s.passiveop)
-    e1:SetCountLimit(1)
-    Duel.RegisterEffect(e1,tp)
+    -- Register passive effect that checks every adjust phase
+    local e2=Effect.CreateEffect(c)
+    e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+    e2:SetCode(EVENT_ADJUST)
+    e2:SetCondition(s.passivecon)
+    e2:SetOperation(s.passiveop)
+    e2:SetCountLimit(1)
+    Duel.RegisterEffect(e2,tp)
 end
 
 function s.rabbittankfilter(c)
@@ -72,7 +80,7 @@ function s.passiveop(e,tp,eg,ep,ev,re,r,rp)
         end
     end
 
-    -- Burn effect if opponent has 2000 or less LP and at least 1 of each counter on field
+    -- Burn if opponent has ≤2000 LP and at least 1 Rabbit and 1 Tank counter on field
     local opp_lp=Duel.GetLP(1-tp)
     if opp_lp<=2000 then
         local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,nil)
@@ -93,4 +101,3 @@ end
 function s.tgfilter(c)
     return c:IsFaceup() and c:IsSetCard(0x27)
 end
-
