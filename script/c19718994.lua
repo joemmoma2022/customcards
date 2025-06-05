@@ -1,138 +1,109 @@
--- T.G. Evolution Drive (Skill Card)
+-- T.G. Synchro Revolution
 local s,id=GetID()
 function s.initial_effect(c)
 	aux.AddSkillProcedure(c,2,false,nil,nil)
 
-	-- Auto-flip at start and add key cards
+	-- Start of Duel
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-	e1:SetProperty(EFFECT_FLAG_UNCOPYABLE+EFFECT_FLAG_CANNOT_DISABLE)
 	e1:SetCode(EVENT_STARTUP)
-	e1:SetRange(LOCATION_ALL)
 	e1:SetCountLimit(1)
+	e1:SetProperty(EFFECT_FLAG_UNCOPYABLE+EFFECT_FLAG_CANNOT_DISABLE)
+	e1:SetRange(LOCATION_ALL)
 	e1:SetOperation(s.startop)
 	c:RegisterEffect(e1)
+
+	-- Beast + Machine typing for all "T.G." monsters
+	local e2=Effect.CreateEffect(c)
+	e2:SetType(EFFECT_TYPE_FIELD)
+	e2:SetCode(EFFECT_ADD_RACE)
+	e2:SetTargetRange(LOCATION_MZONE,0)
+	e2:SetTarget(function(e,c) return c:IsSetCard(0x27) end)
+	e2:SetValue(RACE_BEAST+RACE_MACHINE)
+	c:RegisterEffect(e2)
+
+	-- Once per turn: Add a counter to "T.G. Striker RabbitTank"
+	local e3=Effect.CreateEffect(c)
+	e3:SetType(EFFECT_TYPE_IGNITION)
+	e3:SetRange(LOCATION_SZONE)
+	e3:SetCountLimit(1)
+	e3:SetCondition(s.countercond)
+	e3:SetTarget(s.countertg)
+	e3:SetOperation(s.counterop)
+	c:RegisterEffect(e3)
+
+	-- LP Finish effect
+	local e4=Effect.CreateEffect(c)
+	e4:SetType(EFFECT_TYPE_IGNITION)
+	e4:SetRange(LOCATION_SZONE)
+	e4:SetCountLimit(1)
+	e4:SetCondition(s.finishcond)
+	e4:SetOperation(s.finishop)
+	c:RegisterEffect(e4)
 end
 
--- Start of Duel effect: flip and add cards
+-- Flip and add cards from outside the Duel
 function s.startop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SKILL_FLIP,tp,id|(1<<32))
 	Duel.Hint(HINT_CARD,tp,id)
 
-	-- Create and add Red Rabbit and Blue Tank to hand
+	-- Create the 3 cards
 	local red=Duel.CreateToken(tp,19712856)
 	local blue=Duel.CreateToken(tp,19712857)
-	if red then Duel.SendtoHand(red,nil,REASON_RULE) end
-	if blue then Duel.SendtoHand(blue,nil,REASON_RULE) end
+	local rabbittank=Duel.CreateToken(tp,19712858)
 
-	-- Create and add Striker RabbitTank to Extra Deck
-	local xyz=Duel.CreateToken(tp,19712858)
-	if xyz then
-		local g=Group.CreateGroup()
-		g:AddCard(xyz)
-		Duel.SendtoDeck(g,nil,SEQ_DECKTOP,REASON_RULE)
-	end
+	-- Add Red and Blue to hand
+	Duel.SendtoHand(Group.FromCards(red,blue),nil,REASON_RULE)
 
-	-- Setup passive type effects and ignition counter effect
-	s.setup_continuous_effects(e,tp)
+	-- Add RabbitTank to Extra Deck
+	local g=Group.CreateGroup()
+	g:AddCard(rabbittank)
+	Duel.SendtoDeck(g,nil,SEQ_DECKTOP,REASON_RULE)
 end
 
--- Setup effects while controlling RabbitTank
-function s.setup_continuous_effects(e,tp)
-	-- Continuous passive effect: race changes
-	local e1=Effect.CreateEffect(e:GetHandler())
-	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-	e1:SetCode(EVENT_ADJUST)
-	e1:SetOperation(s.race_type_effect)
-	e1:SetCondition(function() return Duel.IsExistingMatchingCard(s.rabbittankfilter,tp,LOCATION_MZONE,0,1,nil) end)
-	Duel.RegisterEffect(e1,tp)
-
-	-- Ignition effect: Add counter to Striker RabbitTank
-	local e2=Effect.CreateEffect(e:GetHandler())
-	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e2:SetCode(EVENT_PHASE+PHASE_MAIN1)
-	e2:SetRange(LOCATION_ALL)
-	e2:SetCountLimit(1)
-	e2:SetCondition(function(_,tp) return Duel.GetTurnPlayer()==tp and Duel.IsExistingMatchingCard(s.rabbittankfilter,tp,LOCATION_MZONE,0,1,nil) end)
-	e2:SetOperation(s.counter_ignition_op)
-	Duel.RegisterEffect(e2,tp)
-
-	-- Kill effect: if opponent has 2000 or less LP and both counters are present
-	local e3=Effect.CreateEffect(e:GetHandler())
-	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-	e3:SetCode(EVENT_ADJUST)
-	e3:SetCondition(function(_,tp) return Duel.GetLP(1-tp)<=2000 and s.has_counters(tp) end)
-	e3:SetOperation(s.lp_finish_op)
-	Duel.RegisterEffect(e3,tp)
-end
-
--- Filter for T.G. Striker RabbitTank
+-- Condition: You control a face-up "T.G. Striker RabbitTank"
 function s.rabbittankfilter(c)
 	return c:IsFaceup() and c:IsCode(19712858)
 end
-
--- Filter for T.G. monsters
-function s.tgfilter(c)
-	return c:IsFaceup() and c:IsSetCard(0x27)
+function s.countercond(e,tp,eg,ep,ev,re,r,rp)
+	return Duel.IsExistingMatchingCard(s.rabbittankfilter,tp,LOCATION_MZONE,0,1,nil)
 end
 
--- Add Beast + Machine race to all T.G. monsters you control
-function s.race_type_effect(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.GetMatchingGroup(s.tgfilter,tp,LOCATION_MZONE,0,nil)
-	for tc in g:Iter() do
-		if not tc:IsRace(RACE_BEAST) then
-			local e1=Effect.CreateEffect(e:GetHandler())
-			e1:SetType(EFFECT_TYPE_SINGLE)
-			e1:SetCode(EFFECT_ADD_RACE)
-			e1:SetValue(RACE_BEAST)
-			e1:SetReset(RESET_EVENT+RESETS_STANDARD)
-			tc:RegisterEffect(e1)
-		end
-		if not tc:IsRace(RACE_MACHINE) then
-			local e2=Effect.CreateEffect(e:GetHandler())
-			e2:SetType(EFFECT_TYPE_SINGLE)
-			e2:SetCode(EFFECT_ADD_RACE)
-			e2:SetValue(RACE_MACHINE)
-			e2:SetReset(RESET_EVENT+RESETS_STANDARD)
-			tc:RegisterEffect(e2)
-		end
-	end
+-- Target 1 RabbitTank to add a counter
+function s.countertg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and s.rabbittankfilter(chkc) end
+	if chk==0 then return Duel.IsExistingTarget(s.rabbittankfilter,tp,LOCATION_MZONE,0,1,nil) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
+	local g=Duel.SelectTarget(tp,s.rabbittankfilter,tp,LOCATION_MZONE,0,1,1,nil)
 end
 
--- Once per turn ignition: place counter on your RabbitTank
-function s.counter_ignition_op(e,tp,eg,ep,ev,re,r,rp)
-	Duel.Hint(HINT_CARD,tp,id)
-	local g=Duel.GetMatchingGroup(s.rabbittankfilter,tp,LOCATION_MZONE,0,nil)
-	if #g==0 then return end
-	local tc=g:Select(tp,1,1,nil):GetFirst()
-	if not tc then return end
-
-	local opt=Duel.SelectOption(tp,aux.Stringid(id,1),aux.Stringid(id,2)) -- "Rabbit"/"Tank"
+-- Operation: Add a Rabbit or Tank counter
+function s.counterop(e,tp,eg,ep,ev,re,r,rp)
+	local tc=Duel.GetFirstTarget()
+	if not tc or not tc:IsRelateToEffect(e) then return end
+	local opt=Duel.SelectOption(tp,"Add Rabbit Counter","Add Tank Counter")
 	if opt==0 then
-		tc:AddCounter(0x111f,1)
+		tc:AddCounter(0x111f,1) -- Rabbit
 	else
-		tc:AddCounter(0x1120,1)
+		tc:AddCounter(0x1120,1) -- Tank
 	end
 end
 
--- Check if any cards have at least 1 of each counter
-function s.has_counters(tp)
-	local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,nil)
-	return g:GetSum(Card.GetCounter,0x111f)>0 and g:GetSum(Card.GetCounter,0x1120)>0
+-- Condition: Opponent LP ≤ 2000 and min 1 Rabbit and 1 Tank counter on the field
+function s.finishcond(e,tp,eg,ep,ev,re,r,rp)
+	if Duel.GetLP(1-tp) > 2000 then return false end
+	local g=Duel.GetFieldGroup(tp,LOCATION_ONFIELD,LOCATION_ONFIELD)
+	return g:FilterCount(function(c) return c:GetCounter(0x111f)>0 end,nil)>0
+	   and g:FilterCount(function(c) return c:GetCounter(0x1120)>0 end,nil)>0
 end
 
--- If opponent LP ≤ 2000 and both counter types exist: burn for exact LP
-function s.lp_finish_op(e,tp,eg,ep,ev,re,r,rp)
-	if not Duel.SelectYesNo(tp,aux.Stringid(id,3)) then return end
-	Duel.Hint(HINT_CARD,tp,id)
-
-	-- Remove all counters
-	local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,nil)
-	for tc in g:Iter() do
+-- Remove all counters and deal damage equal to opponent's LP
+function s.finishop(e,tp,eg,ep,ev,re,r,rp)
+	local g=Duel.GetFieldGroup(tp,LOCATION_ONFIELD,LOCATION_ONFIELD)
+	for tc in aux.Next(g) do
 		tc:RemoveCounter(tp,0x111f,tc:GetCounter(0x111f),REASON_EFFECT)
 		tc:RemoveCounter(tp,0x1120,tc:GetCounter(0x1120),REASON_EFFECT)
 	end
-
-	local lp=Duel.GetLP(1-tp)
-	Duel.Damage(1-tp,lp,REASON_EFFECT)
+	local dmg=Duel.GetLP(1-tp)
+	Duel.Damage(1-tp,dmg,REASON_EFFECT)
 end
