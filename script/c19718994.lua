@@ -1,109 +1,93 @@
--- T.G. Synchro Revolution
 local s,id=GetID()
 function s.initial_effect(c)
-	aux.AddSkillProcedure(c,2,false,nil,nil)
+    aux.AddSkillProcedure(c,1,false,nil,nil,1)
 
-	-- Start of Duel
-	local e1=Effect.CreateEffect(c)
-	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-	e1:SetCode(EVENT_STARTUP)
-	e1:SetCountLimit(1)
-	e1:SetProperty(EFFECT_FLAG_UNCOPYABLE+EFFECT_FLAG_CANNOT_DISABLE)
-	e1:SetRange(LOCATION_ALL)
-	e1:SetOperation(s.startop)
-	c:RegisterEffect(e1)
-
-	-- Beast + Machine typing for all "T.G." monsters
-	local e2=Effect.CreateEffect(c)
-	e2:SetType(EFFECT_TYPE_FIELD)
-	e2:SetCode(EFFECT_ADD_RACE)
-	e2:SetTargetRange(LOCATION_MZONE,0)
-	e2:SetTarget(function(e,c) return c:IsSetCard(0x27) end)
-	e2:SetValue(RACE_BEAST+RACE_MACHINE)
-	c:RegisterEffect(e2)
-
-	-- Once per turn: Add a counter to "T.G. Striker RabbitTank"
-	local e3=Effect.CreateEffect(c)
-	e3:SetType(EFFECT_TYPE_IGNITION)
-	e3:SetRange(LOCATION_SZONE)
-	e3:SetCountLimit(1)
-	e3:SetCondition(s.countercond)
-	e3:SetTarget(s.countertg)
-	e3:SetOperation(s.counterop)
-	c:RegisterEffect(e3)
-
-	-- LP Finish effect
-	local e4=Effect.CreateEffect(c)
-	e4:SetType(EFFECT_TYPE_IGNITION)
-	e4:SetRange(LOCATION_SZONE)
-	e4:SetCountLimit(1)
-	e4:SetCondition(s.finishcond)
-	e4:SetOperation(s.finishop)
-	c:RegisterEffect(e4)
+    -- Start-of-duel flip and initial setup
+    local e1=Effect.CreateEffect(c)
+    e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+    e1:SetCode(EVENT_STARTUP)
+    e1:SetCountLimit(1)
+    e1:SetRange(0x5f)
+    e1:SetOperation(s.startupop)
+    c:RegisterEffect(e1)
 end
 
--- Flip and add cards from outside the Duel
-function s.startop(e,tp,eg,ep,ev,re,r,rp)
-	Duel.Hint(HINT_SKILL_FLIP,tp,id|(1<<32))
-	Duel.Hint(HINT_CARD,tp,id)
+function s.startupop(e,tp,eg,ep,ev,re,r,rp)
+    Duel.Hint(HINT_SKILL_FLIP,tp,id|(1<<32))
+    Duel.Hint(HINT_CARD,tp,id)
 
-	-- Create the 3 cards
-	local red=Duel.CreateToken(tp,19712856)
-	local blue=Duel.CreateToken(tp,19712857)
-	local rabbittank=Duel.CreateToken(tp,19712858)
+    -- Create and add cards to appropriate places
+    local card1=Duel.CreateToken(tp,19712844) -- Example: "Risen"
+    local card2=Duel.CreateToken(tp,19712845) -- Example: "Justice"
+    local card3=Duel.CreateToken(tp,19712846) -- Example: "Vengeance"
 
-	-- Add Red and Blue to hand
-	Duel.SendtoHand(Group.FromCards(red,blue),nil,REASON_RULE)
+    -- Add card1 (Risen) to Extra Deck
+    if card1 then
+        Duel.SendtoDeck(card1,nil,SEQ_DECKTOP,REASON_RULE)
+    end
 
-	-- Add RabbitTank to Extra Deck
-	local g=Group.CreateGroup()
-	g:AddCard(rabbittank)
-	Duel.SendtoDeck(g,nil,SEQ_DECKTOP,REASON_RULE)
+    -- Add card2 (Justice) to hand
+    if card2 then
+        Duel.SendtoHand(card2,nil,REASON_RULE)
+    end
+
+    -- Add card3 (Vengeance) to hand
+    if card3 then
+        Duel.SendtoHand(card3,nil,REASON_RULE)
+    end
+
+    Duel.ShuffleHand(tp)
+
+    -- Register the once-per-turn counter placement effect
+    local e2=Effect.CreateEffect(e:GetHandler())
+    e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+    e2:SetCode(EVENT_FREE_CHAIN)
+    e2:SetCountLimit(1)
+    e2:SetCondition(s.counter_condition)
+    e2:SetOperation(s.counter_operation)
+    Duel.RegisterEffect(e2,tp)
 end
 
--- Condition: You control a face-up "T.G. Striker RabbitTank"
-function s.rabbittankfilter(c)
-	return c:IsFaceup() and c:IsCode(19712858)
-end
-function s.countercond(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.IsExistingMatchingCard(s.rabbittankfilter,tp,LOCATION_MZONE,0,1,nil)
+-- Filter face-up T.G. Striker RabbitTank monsters that can receive Rabbit or Tank counters
+function s.counter_filter(c)
+    return c:IsFaceup() and c:IsCode(19712858)
+       and (c:IsCanAddCounter(0x111f,1) or c:IsCanAddCounter(0x1120,1))
 end
 
--- Target 1 RabbitTank to add a counter
-function s.countertg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and s.rabbittankfilter(chkc) end
-	if chk==0 then return Duel.IsExistingTarget(s.rabbittankfilter,tp,LOCATION_MZONE,0,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
-	local g=Duel.SelectTarget(tp,s.rabbittankfilter,tp,LOCATION_MZONE,0,1,1,nil)
+-- Condition for activating the counter effect
+function s.counter_condition(e,tp,eg,ep,ev,re,r,rp)
+    return aux.CanActivateSkill(tp) and Duel.IsExistingMatchingCard(s.counter_filter,tp,LOCATION_MZONE,0,1,nil)
 end
 
--- Operation: Add a Rabbit or Tank counter
-function s.counterop(e,tp,eg,ep,ev,re,r,rp)
-	local tc=Duel.GetFirstTarget()
-	if not tc or not tc:IsRelateToEffect(e) then return end
-	local opt=Duel.SelectOption(tp,"Add Rabbit Counter","Add Tank Counter")
-	if opt==0 then
-		tc:AddCounter(0x111f,1) -- Rabbit
-	else
-		tc:AddCounter(0x1120,1) -- Tank
-	end
-end
+-- Operation: prompt to add either Rabbit or Tank counter to a chosen valid monster
+function s.counter_operation(e,tp,eg,ep,ev,re,r,rp)
+    Duel.Hint(HINT_CARD,0,id)
 
--- Condition: Opponent LP ≤ 2000 and min 1 Rabbit and 1 Tank counter on the field
-function s.finishcond(e,tp,eg,ep,ev,re,r,rp)
-	if Duel.GetLP(1-tp) > 2000 then return false end
-	local g=Duel.GetFieldGroup(tp,LOCATION_ONFIELD,LOCATION_ONFIELD)
-	return g:FilterCount(function(c) return c:GetCounter(0x111f)>0 end,nil)>0
-	   and g:FilterCount(function(c) return c:GetCounter(0x1120)>0 end,nil)>0
-end
+    local g=Duel.GetMatchingGroup(s.counter_filter,tp,LOCATION_MZONE,0,nil)
+    if #g==0 then return end
 
--- Remove all counters and deal damage equal to opponent's LP
-function s.finishop(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.GetFieldGroup(tp,LOCATION_ONFIELD,LOCATION_ONFIELD)
-	for tc in aux.Next(g) do
-		tc:RemoveCounter(tp,0x111f,tc:GetCounter(0x111f),REASON_EFFECT)
-		tc:RemoveCounter(tp,0x1120,tc:GetCounter(0x1120),REASON_EFFECT)
-	end
-	local dmg=Duel.GetLP(1-tp)
-	Duel.Damage(1-tp,dmg,REASON_EFFECT)
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
+    local tc=g:Select(tp,1,1,nil):GetFirst()
+
+    local canAddRabbit = tc:IsCanAddCounter(0x111f,1)
+    local canAddTank = tc:IsCanAddCounter(0x1120,1)
+
+    local sel=0
+    if canAddRabbit and canAddTank then
+        sel=Duel.SelectOption(tp,aux.Stringid(id,0),aux.Stringid(id,1))
+    elseif canAddRabbit then
+        sel=0
+    elseif canAddTank then
+        sel=1
+    else
+        return
+    end
+
+    if sel==0 then
+        tc:AddCounter(0x111f,1)
+        Duel.Hint(HINT_MESSAGE,tp,"Added Rabbit Counter")
+    else
+        tc:AddCounter(0x1120,1)
+        Duel.Hint(HINT_MESSAGE,tp,"Added Tank Counter")
+    end
 end
