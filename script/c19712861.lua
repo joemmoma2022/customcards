@@ -105,8 +105,8 @@ end
 -- Condition for battle protection (OPT)
 function s.indcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    return ep==tp and c==Duel.GetBattleTarget() and not c:IsStatus(STATUS_BATTLE_DESTROYED)
-        and Duel.GetAttacker():IsControler(1-tp) and c:GetFlagEffect(id+1)==0
+    local bc=Duel.GetAttackTarget()
+    return bc==c and c:GetFlagEffect(id+1)==0 and not c:IsStatus(STATUS_BATTLE_DESTROYED)
 end
 
 -- Operation: prevent destruction once per turn
