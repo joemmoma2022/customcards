@@ -81,6 +81,9 @@ function s.startop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.risen_xyz_trigger(e,tp,eg,ep,ev,re,r,rp)
+	-- Only allow in Main Phase 1
+	if Duel.GetCurrentPhase()~=PHASE_MAIN1 then return end
+
 	for sc in aux.Next(eg) do
 		if sc:IsCode(19712844) and sc:IsSummonType(SUMMON_TYPE_XYZ) then
 			Duel.Hint(HINT_CARD,tp,id)
