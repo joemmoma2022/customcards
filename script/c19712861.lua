@@ -23,7 +23,7 @@ function s.initial_effect(c)
     e2:SetValue(s.xyzlv)
     c:RegisterEffect(e2)
     
-    -- Change Race to Warrior while on field for Xyz purposes
+    -- Change Race to Warrior while on field
     local e3=Effect.CreateEffect(c)
     e3:SetType(EFFECT_TYPE_SINGLE)
     e3:SetCode(EFFECT_CHANGE_RACE)
@@ -58,7 +58,8 @@ function s.spcon(e,tp,eg,ep,ev,re,r,rp)
     return Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_MZONE,0,1,nil)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and e:GetHandler():IsCanBeSpecialSummoned(e,0,tp,false,false) end
+    if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
+        and e:GetHandler():IsCanBeSpecialSummoned(e,0,tp,false,false) end
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,e:GetHandler(),1,0,0)
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
@@ -85,7 +86,10 @@ end
 function s.efop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     local rc=c:GetReasonCard()
-    if not rc then return end
+    if not rc or not rc:IsType(TYPE_XYZ) then return end
+    if rc:GetFlagEffect(id)~=0 then return end
+    rc:RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD,0,1)
+
     -- Effect: Once per turn, this card cannot be destroyed by battle
     local e1=Effect.CreateEffect(rc)
     e1:SetDescription(aux.Stringid(id,1))
@@ -93,8 +97,8 @@ function s.efop(e,tp,eg,ep,ev,re,r,rp)
     e1:SetCode(EFFECT_INDESTRUCTABLE_BATTLE)
     e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE+EFFECT_FLAG_CLIENT_HINT)
     e1:SetRange(LOCATION_MZONE)
-    e1:SetCountLimit(1)
+    e1:SetCountLimit(1,id+100) -- Unique per monster copy
     e1:SetValue(1)
     e1:SetReset(RESET_EVENT+RESETS_STANDARD)
-    rc:RegisterEffect(e1)
+    rc:RegisterEffect(e1,true)
 end
