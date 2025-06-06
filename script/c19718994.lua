@@ -8,7 +8,7 @@ function s.initial_effect(c)
 	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 	e1:SetCode(EVENT_STARTUP)
 	e1:SetCountLimit(1)
-	-- Do NOT set range here; it's invalid for skill effects
+	e1:SetRange(0x5f)
 	e1:SetOperation(s.op)
 	c:RegisterEffect(e1)
 end
@@ -37,26 +37,30 @@ function s.flipcon(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.flipop(e,tp,eg,ep,ev,re,r,rp)
-	local rabbittank=Duel.GetMatchingGroup(s.rabbittankfilter,tp,LOCATION_MZONE,0,nil):GetFirst()
-	if not rabbittank then return end
 	Duel.Hint(HINT_CARD,tp,id)
-
+	local burnEligible = Duel.GetLP(1-tp) <= 2000
 	local op=Duel.SelectEffect(tp,
 		{true,aux.Stringid(id,1)}, -- Add counter
-		{Duel.GetLP(1-tp)<=2000,aux.Stringid(id,2)}  -- Burn effect (if opponent has 2000 or less LP)
+		{burnEligible,aux.Stringid(id,2)}  -- Burn effect
 	)
+
+	local rabbittank=Duel.GetMatchingGroup(s.rabbittankfilter,tp,LOCATION_MZONE,0,nil):GetFirst()
+	if not rabbittank then return end
 
 	if op==1 then
 		-- Choose counter type
 		local ct=Duel.SelectOption(tp,aux.Stringid(id,3),aux.Stringid(id,4))
 		local counter_id=(ct==0) and RABBIT_COUNTER or TANK_COUNTER
 		rabbittank:AddCounter(counter_id,1)
-	elseif op==2 then
-		-- Count and remove all Rabbit and Tank counters on the field
-		local ct=Duel.GetCounter(tp,1,1,RABBIT_COUNTER)+Duel.GetCounter(tp,1,1,TANK_COUNTER)
-		if ct>0 then
-			Duel.RemoveCounter(tp,1,1,RABBIT_COUNTER,ct,REASON_EFFECT)
-			Duel.RemoveCounter(tp,1,1,TANK_COUNTER,ct,REASON_EFFECT)
+	elseif op==2 and burnEligible then
+		local g=Duel.GetMatchingGroup(aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,nil)
+		local ct=0
+		for tc in aux.Next(g) do
+			ct = ct + tc:GetCounter(RABBIT_COUNTER) + tc:GetCounter(TANK_COUNTER)
+			tc:RemoveCounter(tp,RABBIT_COUNTER,tc:GetCounter(RABBIT_COUNTER),REASON_EFFECT)
+			tc:RemoveCounter(tp,TANK_COUNTER,tc:GetCounter(TANK_COUNTER),REASON_EFFECT)
+		end
+		if ct > 0 then
 			Duel.Damage(1-tp,ct*1000,REASON_EFFECT)
 		end
 	end
