@@ -8,7 +8,7 @@ function s.initial_effect(c)
 	c:EnableReviveLimit()
 	Synchro.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsSetCard,0x44),1,1,aux.FilterBoolFunction(Card.IsCode,HYPERION_ID),1,1)
 
-	--Alternative Synchro Summon using materials from hand or field if Sanctuary is on field
+	--Alternative Synchro Summon using materials from hand if Sanctuary is on field
 	local e0=Effect.CreateEffect(c)
 	e0:SetType(EFFECT_TYPE_FIELD)
 	e0:SetCode(EFFECT_SPSUMMON_PROC)
@@ -25,7 +25,7 @@ function s.initial_effect(c)
 	e1:SetCategory(CATEGORY_TOHAND)
 	e1:SetType(EFFECT_TYPE_IGNITION)
 	e1:SetRange(LOCATION_MZONE)
-	e1:SetCountLimit(1)
+	e1:SetCountLimit(1,id)
 	e1:SetCost(s.thcost)
 	e1:SetTarget(s.thtg)
 	e1:SetOperation(s.thop)
@@ -47,7 +47,7 @@ function s.initial_effect(c)
 	e3:SetCategory(CATEGORY_DESTROY+CATEGORY_DAMAGE)
 	e3:SetType(EFFECT_TYPE_IGNITION)
 	e3:SetRange(LOCATION_MZONE)
-	e3:SetCountLimit(2)
+	e3:SetCountLimit(2,id+100)
 	e3:SetCondition(s.sanctuarycond)
 	e3:SetCost(s.descost)
 	e3:SetTarget(s.destg)
@@ -59,36 +59,48 @@ end
 function s.altcon(e,c)
 	if c==nil then return true end
 	local tp=c:GetControler()
+
 	-- Sanctuary must be face-up
 	if not Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsCode,SANCTUARY_ID),tp,LOCATION_ONFIELD,0,1,nil) then return false end
 
-	-- Check exactly one Tuner and one Hyperion in hand or field
+	-- Get all valid materials
 	local tuners=Duel.GetMatchingGroup(s.tunerfilter,tp,LOCATION_HAND+LOCATION_MZONE,0,nil)
 	local hyperions=Duel.GetMatchingGroup(Card.IsCode,tp,LOCATION_HAND+LOCATION_MZONE,0,nil,HYPERION_ID)
-	if #tuners~=1 or #hyperions~=1 then return false end
 
-	-- At least one material must be in hand
-	local hasTunerInHand = Duel.IsExistingMatchingCard(s.tunerfilter,tp,LOCATION_HAND,0,1,nil)
-	local hasHyperionInHand = Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_HAND,0,1,nil,HYPERION_ID)
-	if not (hasTunerInHand or hasHyperionInHand) then
-		-- Both materials only on field, disallow alt summon
-		return false
+	-- Check for any pair that matches level and has at least one from hand
+	for t in aux.Next(tuners) do
+		for h in aux.Next(hyperions) do
+			if t:GetLevel()+h:GetLevel()==c:GetLevel() then
+				if t:IsLocation(LOCATION_HAND) or h:IsLocation(LOCATION_HAND) then
+					return true
+				end
+			end
+		end
 	end
 
-	return true
+	return false
 end
 
+--Filter for "The Agent" Tuners
 function s.tunerfilter(c)
 	return c:IsSetCard(0x44) and c:IsType(TYPE_TUNER)
 end
 
 --Alternative Synchro Summon operation
 function s.altop(e,tp,eg,ep,ev,re,r,rp,c)
-	-- Select and send both materials from hand or field to grave
-	local g1=Duel.GetMatchingGroup(s.tunerfilter,tp,LOCATION_HAND+LOCATION_MZONE,0,nil)
-	local g2=Duel.GetMatchingGroup(Card.IsCode,tp,LOCATION_HAND+LOCATION_MZONE,0,nil,HYPERION_ID)
+	-- Select valid Tuner
+	local g1=Duel.SelectMatchingCard(tp,s.tunerfilter,tp,LOCATION_HAND+LOCATION_MZONE,0,1,1,nil)
+	local tuner=g1:GetFirst()
+	if not tuner then return end
+
+	-- Select valid Hyperion with matching level
+	local lv=c:GetLevel()-tuner:GetLevel()
+	local g2=Duel.SelectMatchingCard(tp,function(card)
+		return card:IsCode(HYPERION_ID) and card:GetLevel()==lv
+	end,tp,LOCATION_HAND+LOCATION_MZONE,0,1,1,nil)
+
 	g1:Merge(g2)
-	Duel.SendtoGrave(g1,REASON_COST)
+	Duel.SendtoGrave(g1,REASON_MATERIAL+REASON_SYNCHRO)
 end
 
 --Cost: Banish 1 Spell from hand
@@ -117,12 +129,12 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
---Sanctuary condition
+--Sanctuary must be face-up
 function s.sanctuarycond(e)
 	return Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsCode,SANCTUARY_ID),e:GetHandlerPlayer(),LOCATION_ONFIELD,0,1,nil)
 end
 
---Destroy opponent's card by banishing Fairy
+--Destroy 1 opponent's card and burn
 function s.descost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.fairyfilter,tp,LOCATION_GRAVE,0,1,nil) end
 	local g=Duel.SelectMatchingCard(tp,s.fairyfilter,tp,LOCATION_GRAVE,0,1,1,nil)
