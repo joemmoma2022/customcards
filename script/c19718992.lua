@@ -1,4 +1,3 @@
--- Ninpo Counter Continuous Spell
 local s,id=GetID()
 local COUNTER_NINPO=0x1121
 local FHUMA_SHURIKEN_ID=09373534
@@ -51,8 +50,10 @@ function s.initial_effect(c)
     end)
     c:RegisterEffect(e2)
 
-    -- Efectos desbloqueables según contadores
-    s.create_costed_effect(c,1,aux.Stringid(id,1),CATEGORY_TOHAND,EFFECT_TYPE_IGNITION,
+    -- EFFECTS UNLOCK BASED ON COUNTER THRESHOLDS (no cost to activate)
+
+    -- 1+ counters effect: Add FHuma Shuriken to hand if control Ninja
+    s.create_threshold_effect(c,1,aux.Stringid(id,1),CATEGORY_TOHAND,EFFECT_TYPE_IGNITION,
         function(tp) return Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsSetCard,NINJA_HEXCODE),tp,LOCATION_MZONE,0,1,nil) end,
         nil,
         function(e,tp)
@@ -61,7 +62,8 @@ function s.initial_effect(c)
             Duel.ConfirmCards(1-tp,token)
         end)
 
-    s.create_costed_effect(c,3,aux.Stringid(id,2),CATEGORY_DAMAGE,EFFECT_TYPE_IGNITION,nil,
+    -- 3+ counters effect: Burn damage based on #Ninjas on field+grave
+    s.create_threshold_effect(c,3,aux.Stringid(id,2),CATEGORY_DAMAGE,EFFECT_TYPE_IGNITION,nil,
         function(e,tp,eg,ep,ev,re,r,rp,chk)
             if chk==0 then return true end
             local ct=Duel.GetMatchingGroupCount(Card.IsSetCard,tp,LOCATION_MZONE+LOCATION_GRAVE,LOCATION_MZONE+LOCATION_GRAVE,nil,NINJA_HEXCODE)
@@ -74,7 +76,8 @@ function s.initial_effect(c)
             Duel.Damage(p,d,REASON_EFFECT)
         end)
 
-    s.create_costed_effect(c,5,aux.Stringid(id,3),CATEGORY_DESTROY,EFFECT_TYPE_IGNITION,nil,
+    -- 5+ counters effect: Destroy 1 card your field + 1 opponent card
+    s.create_threshold_effect(c,5,aux.Stringid(id,3),CATEGORY_DESTROY,EFFECT_TYPE_IGNITION,nil,
         function(e,tp,eg,ep,ev,re,r,rp,chk)
             if chk==0 then
                 return Duel.IsExistingMatchingCard(aux.TRUE,tp,LOCATION_ONFIELD,0,1,nil)
@@ -91,7 +94,8 @@ function s.initial_effect(c)
             end
         end)
 
-    s.create_costed_effect(c,7,aux.Stringid(id,4),CATEGORY_LEAVE_GRAVE,EFFECT_TYPE_IGNITION,nil,
+    -- 7+ counters effect: Overlay 1 facedown card to XYZ Ninja
+    s.create_threshold_effect(c,7,aux.Stringid(id,4),CATEGORY_LEAVE_GRAVE,EFFECT_TYPE_IGNITION,nil,
         function(e,tp,eg,ep,ev,re,r,rp,chk)
             if chk==0 then
                 return Duel.IsExistingMatchingCard(Card.IsFacedown,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil)
@@ -106,7 +110,8 @@ function s.initial_effect(c)
             end
         end)
 
-    s.create_costed_effect(c,9,aux.Stringid(id,5),CATEGORY_SPECIAL_SUMMON,EFFECT_TYPE_IGNITION,nil,
+    -- 9+ counters effect: Special Summon 2 Kagura Clone tokens
+    s.create_threshold_effect(c,9,aux.Stringid(id,5),CATEGORY_SPECIAL_SUMMON,EFFECT_TYPE_IGNITION,nil,
         function(e,tp,eg,ep,ev,re,r,rp,chk)
             if chk==0 then
                 return Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_MZONE,0,1,nil,KAGURA_ID)
@@ -124,7 +129,8 @@ function s.initial_effect(c)
             Duel.SpecialSummonComplete()
         end)
 
-    s.create_costed_effect(c,11,aux.Stringid(id,6),CATEGORY_DESTROY+CATEGORY_DAMAGE,EFFECT_TYPE_IGNITION,nil,
+    -- 11+ counters effect: Destroy Kagura and deal double ATK damage
+    s.create_threshold_effect(c,11,aux.Stringid(id,6),CATEGORY_DESTROY+CATEGORY_DAMAGE,EFFECT_TYPE_IGNITION,nil,
         function(e,tp,eg,ep,ev,re,r,rp,chk)
             if chk==0 then return Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_MZONE,0,1,nil,KAGURA_ID) end
         end,
@@ -140,20 +146,17 @@ function s.efilter(e,te)
     return te:GetOwner()~=e:GetOwner()
 end
 
-function s.create_costed_effect(card,count,desc,category,etype,cond,target,operation)
+-- New function: create effect unlocked at threshold counters (no cost)
+function s.create_threshold_effect(card,threshold,desc,category,etype,cond,target,operation)
     local e=Effect.CreateEffect(card)
     e:SetDescription(desc)
     e:SetCategory(category)
     e:SetType(etype)
     e:SetRange(LOCATION_SZONE)
-    e:SetCountLimit(1,id+count) -- Unique count per effect
-    e:SetCondition(function(e,tp) return not cond or cond(tp) end)
-    e:SetCost(function(e,tp,eg,ep,ev,re,r,rp,chk)
-        if chk==0 then
-            return e:GetHandler():IsCanRemoveCounter(tp,COUNTER_NINPO,count,REASON_COST)
-                and Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_MZONE,0,1,nil,KAGURA_ID)
-        end
-        e:GetHandler():RemoveCounter(tp,COUNTER_NINPO,count,REASON_COST)
+    e:SetCountLimit(1,id+threshold) -- Unique per effect once per turn
+    e:SetCondition(function(e,tp)
+        local c=e:GetHandler()
+        return c:GetCounter(COUNTER_NINPO)>=threshold and (not cond or cond(tp))
     end)
     if target then e:SetTarget(target) end
     if operation then e:SetOperation(operation) end
