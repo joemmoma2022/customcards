@@ -28,14 +28,36 @@ function s.initial_effect(c)
     e2:SetTarget(s.destg)
     e2:SetOperation(s.desop)
     c:RegisterEffect(e2)
+
+    -- If Inferno Crystal is Special Summoned while this is in GY: Add this card to hand
+    local e3=Effect.CreateEffect(c)
+    e3:SetDescription(aux.Stringid(id,1))
+    e3:SetCategory(CATEGORY_TOHAND)
+    e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+    e3:SetCode(EVENT_SPSUMMON_SUCCESS)
+    e3:SetRange(LOCATION_GRAVE)
+    e3:SetProperty(EFFECT_FLAG_DELAY)
+    e3:SetCountLimit(1,id)
+    e3:SetCondition(s.inferno_crystal_summon_con)
+    e3:SetTarget(s.thtg)
+    e3:SetOperation(s.thop)
+    c:RegisterEffect(e3)
+
+    -- Special Summon self from hand if Inferno Crystal is on your field
+    local e4=Effect.CreateEffect(c)
+    e4:SetDescription(aux.Stringid(id,2)) -- optional hint string
+    e4:SetType(EFFECT_TYPE_FIELD)
+    e4:SetCode(EFFECT_SPSUMMON_PROC)
+    e4:SetProperty(EFFECT_FLAG_UNCOPYABLE)
+    e4:SetRange(LOCATION_HAND)
+    e4:SetCondition(s.hspcon)
+    c:RegisterEffect(e4)
 end
 
--- Cannot be Special Summoned from the GY
 function s.splimit(e,se,sp,st)
     return not (st & SUMMON_TYPE_SPECIAL == SUMMON_TYPE_SPECIAL and e:GetHandler():IsLocation(LOCATION_GRAVE))
 end
 
--- Count "Gem-" and "Gem-Knight" monsters
 function s.gemfilter(c)
     return c:IsMonster() and (c:IsSetCard(0x47) or c:IsSetCard(0x1047))
 end
@@ -60,4 +82,27 @@ function s.desop(e,tp,eg,ep,ev,re,r,rp)
         e1:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE)
         c:RegisterEffect(e1)
     end
+end
+
+-- Trigger when Inferno Crystal is Special Summoned
+function s.inferno_crystal_summon_con(e,tp,eg,ep,ev,re,r,rp)
+    return eg:IsExists(function(c) return c:IsFaceup() and c:IsCode(19712840) and c:IsControler(tp) end,1,nil)
+end
+function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
+    if chk==0 then return e:GetHandler():IsAbleToHand() end
+    Duel.SetOperationInfo(0,CATEGORY_TOHAND,e:GetHandler(),1,0,0)
+end
+function s.thop(e,tp,eg,ep,ev,re,r,rp)
+    local c=e:GetHandler()
+    if c:IsRelateToEffect(e) then
+        Duel.SendtoHand(c,nil,REASON_EFFECT)
+    end
+end
+
+-- Special Summon self from hand if Inferno Crystal is on your field
+function s.hspcon(e,c)
+    if c==nil then return true end
+    local tp=c:GetControler()
+    return Duel.IsExistingMatchingCard(function(c) return c:IsFaceup() and c:IsCode(19712840) end,tp,LOCATION_MZONE,0,1,nil)
+        and Duel.GetLocationCount(tp,LOCATION_MZONE)>0
 end
