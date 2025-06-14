@@ -34,32 +34,27 @@ function s.startop(e,tp,eg,ep,ev,re,r,rp)
 	local g2=Group.FromCards(revi, vice)
 	Duel.SendtoHand(g2,nil,REASON_RULE)
 
-	-- Register Ignition effect: Once per Duel, treat 1 face-up monster you control as Dinosaur
+	-- Set up once-per-duel effect to treat 1 monster as Dinosaur
 	local e2=Effect.CreateEffect(e:GetHandler())
-	e2:SetDescription(aux.Stringid(id,0))
-	e2:SetType(EFFECT_TYPE_IGNITION)
-	e2:SetRange(LOCATION_MZONE)
-	e2:SetCountLimit(1,id)
-	e2:SetTarget(s.racetg)
+	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+	e2:SetCode(EVENT_FREE_CHAIN)
+	e2:SetCondition(s.racecon)
 	e2:SetOperation(s.raceop)
+	e2:SetCountLimit(1,id)
+	e2:SetProperty(EFFECT_FLAG_NO_TURN_RESET)
 	Duel.RegisterEffect(e2,tp)
 end
 
--- Target a face-up monster you control
-function s.racefilter(c)
-	return c:IsFaceup() and not c:IsRace(RACE_DINOSAUR)
+-- Once per Duel: Treat a monster you control as Dinosaur
+function s.racecon(e,tp,eg,ep,ev,re,r,rp)
+	return Duel.IsExistingMatchingCard(Card.IsFaceup,tp,LOCATION_MZONE,0,1,nil)
 end
-function s.racetg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.racefilter,tp,LOCATION_MZONE,0,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
-	local g=Duel.SelectTarget(tp,s.racefilter,tp,LOCATION_MZONE,0,1,1,nil)
-end
-
--- Add Dinosaur race to selected monster
 function s.raceop(e,tp,eg,ep,ev,re,r,rp)
-	local tc=Duel.GetFirstTarget()
-	if tc and tc:IsFaceup() and tc:IsRelateToEffect(e) then
-		Duel.Hint(HINT_CARD,tp,id)
+	Duel.Hint(HINT_CARD,tp,id)
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
+	local g=Duel.SelectMatchingCard(tp,Card.IsFaceup,tp,LOCATION_MZONE,0,1,1,nil)
+	local tc=g:GetFirst()
+	if tc then
 		local e1=Effect.CreateEffect(e:GetHandler())
 		e1:SetType(EFFECT_TYPE_SINGLE)
 		e1:SetCode(EFFECT_ADD_RACE)

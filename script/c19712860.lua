@@ -36,12 +36,15 @@ function s.initial_effect(c)
     e3:SetCondition(s.dircon)
     c:RegisterEffect(e3)
 
-    --Passive burn effect after direct battle damage
+    --Burn damage trigger effect after dealing direct battle damage
     local e4=Effect.CreateEffect(c)
-    e4:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-    e4:SetCode(EVENT_DAMAGE_STEP_END)
-    e4:SetRange(LOCATION_MZONE)
-    e4:SetOperation(s.burnop)
+    e4:SetDescription(aux.Stringid(id,1))
+    e4:SetCategory(CATEGORY_DAMAGE)
+    e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+    e4:SetCode(EVENT_BATTLE_DAMAGE)
+    e4:SetCondition(s.damcon)
+    e4:SetTarget(s.damtg)
+    e4:SetOperation(s.damop)
     c:RegisterEffect(e4)
 end
 s.listed_series={SET_NINJA,SET_NINJITSU_ART}
@@ -138,15 +141,21 @@ function s.dircon(e)
     return s.has_ninja_xyzmat(e:GetHandler())
 end
 
--- Passive Burn Operation
-function s.burnop(e,tp,eg,ep,ev,re,r,rp)
+-- Burn damage trigger condition: after dealing direct battle damage
+function s.damcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    if not c:IsRelateToBattle() then return end
-    if Duel.GetAttacker()~=c or c:GetBattleTarget()~=nil then return end
-    if not s.has_ninja_xyzmat(c) then return end
+    return ep~=tp and c:GetBattleTarget()==nil and s.has_ninja_xyzmat(c)
+end
 
-    local dmg=c:GetOverlayCount()*200
-    if dmg>0 then
-        Duel.Damage(1-tp,dmg,REASON_EFFECT)
-    end
+function s.damtg(e,tp,eg,ep,ev,re,r,rp,chk)
+    if chk==0 then return true end
+    local ct=e:GetHandler():GetOverlayCount()
+    Duel.SetTargetPlayer(1-tp)
+    Duel.SetTargetParam(ct*200)
+    Duel.SetOperationInfo(0,CATEGORY_DAMAGE,nil,0,1-tp,ct*200)
+end
+
+function s.damop(e,tp,eg,ep,ev,re,r,rp)
+    local p,d=Duel.GetChainInfo(0,CHAININFO_TARGET_PLAYER,CHAININFO_TARGET_PARAM)
+    Duel.Damage(p,d,REASON_EFFECT)
 end

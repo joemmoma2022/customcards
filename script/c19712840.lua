@@ -13,10 +13,12 @@ function s.initial_effect(c)
     e0:SetOperation(s.sprop)
     c:RegisterEffect(e0)
 
-    --ATK gain based on battled monster's DEF
+    --Gain ATK equal to opponent's DEF at the start of battle
     local e1=Effect.CreateEffect(c)
-    e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
-    e1:SetCode(EVENT_PRE_DAMAGE_CALCULATE)
+    e1:SetDescription(aux.Stringid(id,0))
+    e1:SetCategory(CATEGORY_ATKCHANGE)
+    e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_F)
+    e1:SetCode(EVENT_BATTLE_START)
     e1:SetCondition(s.atkcon)
     e1:SetOperation(s.atkop)
     c:RegisterEffect(e1)
@@ -39,7 +41,7 @@ function s.initial_effect(c)
 
     --Quick Effect: Destroy and burn if 3+ counters
     local e4=Effect.CreateEffect(c)
-    e4:SetDescription(aux.Stringid(id,0))
+    e4:SetDescription(aux.Stringid(id,1))
     e4:SetCategory(CATEGORY_DESTROY+CATEGORY_DAMAGE)
     e4:SetType(EFFECT_TYPE_QUICK_O)
     e4:SetCode(EVENT_FREE_CHAIN)
@@ -74,23 +76,23 @@ function s.sprop(e,tp,eg,ep,ev,re,r,rp,c)
     Duel.SendtoGrave(g1,REASON_COST)
 end
 
---ATK gain during battle
+--ATK gain based on opponent's DEF at battle start
 function s.atkcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     local bc=c:GetBattleTarget()
-    return c:IsSummonType(SUMMON_TYPE_FUSION) and bc and bc:IsFaceup()
+    return bc and bc:IsFaceup() and bc:GetDefense()>0
 end
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     local bc=c:GetBattleTarget()
-    if not bc or not bc:IsRelateToBattle() then return end
-    local val=bc:GetDefense()
-    if val<0 then val=0 end
+    if not bc or not bc:IsRelateToBattle() or not c:IsRelateToBattle() then return end
+    local def=bc:GetDefense()
+    if def<0 then def=0 end
     local e1=Effect.CreateEffect(c)
     e1:SetType(EFFECT_TYPE_SINGLE)
     e1:SetCode(EFFECT_UPDATE_ATTACK)
-    e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_DAMAGE_CAL)
-    e1:SetValue(val)
+    e1:SetValue(def)
+    e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
     c:RegisterEffect(e1)
 end
 
@@ -107,7 +109,7 @@ function s.indcon(e)
     return e:GetHandler():GetCounter(0x1319)>=3
 end
 
---Quick Effect: destroy monster and burn 1000
+--Quick Effect: destroy 1 opponent monster and burn 1000
 function s.qecon(e,tp,eg,ep,ev,re,r,rp)
     return e:GetHandler():GetCounter(0x1319)>=3
 end
