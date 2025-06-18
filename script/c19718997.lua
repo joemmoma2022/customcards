@@ -1,143 +1,151 @@
--- Galaxy-Eyes Meteor Knight Skill
--- Scripted by You
+--Gem-Knight Inferno Skill
+--Scripted by ChatGPT
 local s,id=GetID()
 
-local METEOR_KNIGHT=19712869
-local METEORSTRIKE=19712870
-local PHOTON_DRAGON=511003205
+-- Counter ID for Inferno Counter
+local INFERNO_COUNTER=0x1319
 
 function s.initial_effect(c)
-	aux.AddSkillProcedure(c,1,false,nil,nil)
+	aux.AddSkillProcedure(c,1,false,s.flipcon,s.flipop,1)
 
-	-- Startup effect: Add cards at duel start
+	-- Start of Duel: Add cards to hand/Extra Deck
 	local e1=Effect.CreateEffect(c)
 	e1:SetProperty(EFFECT_FLAG_UNCOPYABLE+EFFECT_FLAG_CANNOT_DISABLE)
 	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 	e1:SetCode(EVENT_STARTUP)
 	e1:SetCountLimit(1)
 	e1:SetRange(0x5f)
-	e1:SetOperation(s.startop)
+	e1:SetOperation(s.op)
 	c:RegisterEffect(e1)
 
-	-- Once per duel LP protection
+	-- Passive protections
 	local e2=Effect.CreateEffect(c)
-	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-	e2:SetCode(EVENT_PRE_BATTLE_DAMAGE)
-	e2:SetCondition(s.lpcon)
-	e2:SetOperation(s.lpop)
+	e2:SetType(EFFECT_TYPE_FIELD)
+	e2:SetCode(EFFECT_INDESTRUCTABLE_EFFECT)
+	e2:SetTargetRange(LOCATION_MZONE,0)
+	e2:SetTarget(s.proteffect1)
+	e2:SetValue(s.indval)
 	Duel.RegisterEffect(e2,0)
 
-	-- Extra attack after banishing opponent's monster with Meteor Knight this turn
 	local e3=Effect.CreateEffect(c)
-	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-	e3:SetCode(EVENT_REMOVE)
-	e3:SetCondition(s.extraatkcon)
-	e3:SetOperation(s.extraatkop)
+	e3:SetType(EFFECT_TYPE_FIELD)
+	e3:SetCode(EFFECT_INDESTRUCTABLE_BATTLE)
+	e3:SetTargetRange(LOCATION_MZONE,0)
+	e3:SetTarget(s.proteffect2)
+	e3:SetValue(1)
 	Duel.RegisterEffect(e3,0)
 end
 
-function s.startop(e,tp,eg,ep,ev,re,r,rp)
-	local p=e:GetHandlerPlayer()
-	Duel.Hint(HINT_SKILL_FLIP,p,id|(1<<32))
-	Duel.Hint(HINT_CARD,p,id)
-
-	-- Add Meteor Knight token face-down to Extra Deck
-	local meteor_knight_token=Duel.CreateToken(p,METEOR_KNIGHT)
-	Duel.SendtoDeck(meteor_knight_token,p,SEQ_DECKTOP,REASON_RULE)
-
-	-- Add Meteorstrike to hand
-	local meteorstrike_token=Duel.CreateToken(p,METEORSTRIKE)
-	Duel.SendtoHand(meteorstrike_token,p,REASON_RULE)
-	Duel.ConfirmCards(1-p,meteorstrike_token)
-
-	-- Add Galaxy-Eyes Photon Dragon from Deck to hand
-	local g=Duel.GetMatchingGroup(Card.IsCode,p,LOCATION_DECK,0,nil,PHOTON_DRAGON)
-	if #g>0 then
-		Duel.Hint(HINT_SELECTMSG,p,HINTMSG_ATOHAND)
-		local sel=g:Select(p,1,1,nil)
-		Duel.SendtoHand(sel,p,REASON_RULE)
-		Duel.ConfirmCards(1-p,sel)
-	end
-end
-
--- LP protection condition
-function s.lpcon(e,tp,eg,ep,ev,re,r,rp)
-	local lp=Duel.GetLP(ep)
-	return lp-ev<=0 and ep==tp and Duel.GetFlagEffect(tp,id)==0
-end
-
--- LP protection operation: Set LP to 1 once per duel
-function s.lpop(e,tp,eg,ep,ev,re,r,rp)
-	Duel.SetLP(tp,1)
-	Duel.RegisterFlagEffect(tp,id,RESET_PHASE+PHASE_END+RESET_SELF_TURN,0,1)
+-- Start of Duel: Add Inferno Crystal to Extra, Beetle to Hand, and search 1 Gem-Knight Normal
+function s.op(e,tp,eg,ep,ev,re,r,rp)
+	Duel.Hint(HINT_SKILL_FLIP,tp,id|(1<<32))
 	Duel.Hint(HINT_CARD,tp,id)
+
+	-- Add Gem-Knight Inferno Crystal to Extra Deck
+	local inferno=Duel.CreateToken(tp,19712840)
+	Duel.SendtoDeck(inferno,tp,SEQ_DECKTOP,REASON_RULE)
+
+	-- Add Gem-Mech God Beetle to hand
+	local beetle=Duel.CreateToken(tp,19712855)
+	Duel.SendtoHand(beetle,tp,REASON_RULE)
+
+	-- Search 1 Gem-Knight Normal from Deck
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
+	local g=Duel.SelectMatchingCard(tp,function(c)
+		return c:IsSetCard(0x1047) and c:IsType(TYPE_NORMAL) and c:IsAbleToHand()
+	end,tp,LOCATION_DECK,0,1,1,nil)
+	if #g>0 then
+		Duel.SendtoHand(g,tp,REASON_RULE)
+		Duel.ConfirmCards(1-tp,g)
+	end
 end
 
--- Check if a "Galaxy-Eyes Meteor Knight" controlled by tp banished opponent monster this turn
-function s.extraatkcon(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	for tc in aux.Next(eg) do
-		-- Banished card must have been controlled by opponent
-		if tc:IsPreviousControler(1-tp) then
-			-- Check if a Meteor Knight controlled by tp banished it
-			local reason_card=Duel.GetReasonCard(tc)
-			if reason_card and reason_card:IsControler(tp) and reason_card:IsCode(METEOR_KNIGHT) then
-				-- Check it is your turn (the skill owner)
-				if Duel.GetTurnPlayer()==tp then
-					-- Mark Meteor Knight for extra attack effect this turn
-					reason_card:RegisterFlagEffect(id,RESET_PHASE+PHASE_END,0,1)
-					return false -- We don't want to trigger multiple times for multiple banishes
-				end
+-- Skill activation condition: Must control Inferno Crystal and be able to use at least part of the effect
+function s.flipcon(e,tp,eg,ep,ev,re,r,rp)
+	if not aux.CanActivateSkill(tp) then return false end
+	local inferno=Duel.IsExistingMatchingCard(function(c)
+		return c:IsFaceup() and c:IsCode(19712840)
+	end,tp,LOCATION_MZONE,0,1,nil)
+	if not inferno then return false end
+
+	-- Check if there's something to revive and a counter to remove
+	local can_remove=Duel.IsExistingMatchingCard(function(c)
+		return c:IsCanRemoveCounter(tp,INFERNO_COUNTER,1,REASON_EFFECT)
+	end,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil)
+	local gy_target=Duel.IsExistingMatchingCard(function(c)
+		return c:IsSetCard(0x1047) and c:IsType(TYPE_NORMAL) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+	end,tp,LOCATION_GRAVE,0,1,nil)
+
+	return true -- always true if Inferno Crystal is present, counter adding is guaranteed
+end
+
+-- Skill effect operation
+function s.flipop(e,tp,eg,ep,ev,re,r,rp)
+	Duel.Hint(HINT_CARD,tp,id)
+
+	-- Select Inferno Crystal to add counter
+	local g=Duel.GetMatchingGroup(s.infernofilter,tp,LOCATION_MZONE,0,nil)
+	if #g==0 then return end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
+	local tc=g:Select(tp,1,1,nil):GetFirst()
+	if not tc then return end
+	tc:AddCounter(INFERNO_COUNTER,1)
+
+	-- Optional revive
+	local hasCounter=Duel.IsExistingMatchingCard(function(c)
+		return c:IsCanRemoveCounter(tp,INFERNO_COUNTER,1,REASON_EFFECT)
+	end,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil)
+	local gyTarget=Duel.IsExistingMatchingCard(function(c)
+		return c:IsSetCard(0x1047) and c:IsType(TYPE_NORMAL) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+	end,tp,LOCATION_GRAVE,0,1,nil)
+
+	if hasCounter and gyTarget and Duel.SelectYesNo(tp,aux.Stringid(id,0)) then
+		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
+		local ctc=Duel.SelectMatchingCard(tp,function(c)
+			return c:IsCanRemoveCounter(tp,INFERNO_COUNTER,1,REASON_EFFECT)
+		end,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,1,nil):GetFirst()
+		if ctc and ctc:RemoveCounter(tp,INFERNO_COUNTER,1,REASON_EFFECT) then
+			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
+			local spc=Duel.SelectMatchingCard(tp,function(c)
+				return c:IsSetCard(0x1047) and c:IsType(TYPE_NORMAL) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+			end,tp,LOCATION_GRAVE,0,1,1,nil):GetFirst()
+			if spc then
+				Duel.SpecialSummon(spc,0,tp,tp,false,false,POS_FACEUP)
 			end
 		end
 	end
-	return false
 end
 
--- Operation: grant extra attack to Meteor Knight(s) flagged this turn
-function s.extraatkop(e,tp,eg,ep,ev,re,r,rp)
-	-- This will be handled by a continuous effect that checks flagged Meteor Knights and applies extra attacks
-	-- So here we just do nothing; extra attacks are given dynamically below
+-- Filter for selecting Inferno Crystal
+function s.infernofilter(c)
+	return c:IsFaceup() and c:IsCode(19712840)
 end
 
--- Effect that grants extra attack to Meteor Knights flagged this turn
-local function extra_attack_filter(e,c)
-	return c:GetFlagEffect(id)>0
+-- Count total Inferno Counters on your field
+function s.total_inferno_counters(tp)
+	local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,LOCATION_ONFIELD,0,nil)
+	local total=0
+	for tc in g:Iter() do
+		total = total + tc:GetCounter(INFERNO_COUNTER)
+	end
+	return total
 end
 
-local function register_extra_attack_effect(tp)
-	local e=Effect.CreateEffect(nil)
-	e:SetType(EFFECT_TYPE_FIELD)
-	e:SetCode(EFFECT_EXTRA_ATTACK)
-	e:SetTargetRange(LOCATION_MZONE,0)
-	e:SetTarget(extra_attack_filter)
-	e:SetValue(1)
-	e:SetReset(RESET_PHASE+PHASE_END)
-	Duel.RegisterEffect(e,tp)
+-- Protection from effect destruction: only if player has Inferno Crystal + 3+ total Inferno Counters
+function s.proteffect1(e,c)
+	return c:IsFaceup() and c:IsCode(19712840)
+		and Duel.IsExistingMatchingCard(function(c) return c:IsFaceup() and c:IsCode(19712840) end,c:GetControler(),LOCATION_MZONE,0,1,nil)
+		and s.total_inferno_counters(c:GetControler())>=3
 end
 
--- We want to register this effect once the first Meteor Knight banishes a monster
--- So let's add a global check:
-
-if not s.global_check then
-	s.global_check=true
-	local ge1=Effect.CreateEffect(c)
-	ge1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-	ge1:SetCode(EVENT_REMOVE)
-	ge1:SetOperation(function(e,tp,eg,ep,ev,re,r,rp)
-		local turn_player=Duel.GetTurnPlayer()
-		for tc in aux.Next(eg) do
-			if tc:IsPreviousControler(1-turn_player) then
-				local reason_card=Duel.GetReasonCard(tc)
-				if reason_card and reason_card:IsControler(turn_player) and reason_card:IsCode(METEOR_KNIGHT) then
-					reason_card:RegisterFlagEffect(id,RESET_PHASE+PHASE_END,0,1)
-					register_extra_attack_effect(turn_player)
-					break
-				end
-			end
-		end
-	end)
-	Duel.RegisterEffect(ge1,0)
+-- Protection from battle destruction: applies to Gem-Knight Normals if player has Inferno Crystal + 3+ counters
+function s.proteffect2(e,c)
+	return c:IsFaceup() and c:IsSetCard(0x1047) and c:IsType(TYPE_NORMAL)
+		and Duel.IsExistingMatchingCard(function(fc) return fc:IsFaceup() and fc:IsCode(19712840) end,c:GetControler(),LOCATION_MZONE,0,1,nil)
+		and s.total_inferno_counters(c:GetControler())>=3
 end
 
-return s
+-- Only protects from opponent’s effects
+function s.indval(e,re,tp)
+	return e:GetHandlerPlayer()~=tp
+end
