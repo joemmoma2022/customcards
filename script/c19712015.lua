@@ -1,4 +1,3 @@
---Trading Blows
 local s,id=GetID()
 
 -- Strike Subtypes

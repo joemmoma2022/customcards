@@ -1,4 +1,3 @@
---Custom Noble Knight Xyz
 local s,id=GetID()
 function s.initial_effect(c)
     --Xyz Summon procedure

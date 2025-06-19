@@ -1,5 +1,3 @@
--- Speedroid Synchro Surge / Hi-Speedroid Warrior Tridoron
--- ID: 19712871
 local s,id=GetID()
 function s.initial_effect(c)
     -- Synchro Summon procedure: 1 Tuner + 1+ non-Tuner monsters (both must be Speedroids)

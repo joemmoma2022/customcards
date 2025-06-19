@@ -1,4 +1,3 @@
---Taunt (Quick-Play Spell)
 local s,id=GetID()
 
 local STRIKE_SETCODE=0x0801  -- Strike archetype

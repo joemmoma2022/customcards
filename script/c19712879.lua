@@ -1,5 +1,3 @@
--- Rockin' Boombox Token
--- Scripted by You
 local s,id=GetID()
 
 function s.initial_effect(c)

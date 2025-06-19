@@ -1,4 +1,3 @@
---Speedroid Synchro Surge
 local s,id=GetID()
 function s.initial_effect(c)
     --Synchro Summon Hi-Speedroid Warrior Tridoron

@@ -1,5 +1,3 @@
--- Ancient Gear Grease Injector
--- Scripted by You
 local s,id=GetID()
 local GREASED_GOLEM_ID=19712882
 local ANCIENT_GEAR_GOLEM_ID=83104731

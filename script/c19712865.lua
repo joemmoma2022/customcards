@@ -1,4 +1,3 @@
---Darklord Xyz Monster
 local s,id=GetID()
 local SANCTUARY_ID=19712868 -- Desecrated Sanctuary card code
 

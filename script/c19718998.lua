@@ -1,6 +1,3 @@
--- Hi-Speedroid Warrior Tridoron Skill
--- Scripted by ChatGPT
-
 local s,id=GetID()
 local TRIDORON_ID=19712871
 local SPEED_SPELL_ID=19712872

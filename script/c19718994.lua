@@ -1,5 +1,3 @@
---Believe in your Bro
---Scripted by The Razgriz, modified with fixes
 local s,id=GetID()
 
 -- Counter IDs

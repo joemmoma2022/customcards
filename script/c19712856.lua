@@ -1,4 +1,3 @@
---T.G. Custom Card
 local s,id=GetID()
 function s.initial_effect(c)
     -- Special Summon 1 "T.G." Level 4 or higher monster from hand when this card is Normal Summoned

@@ -1,5 +1,3 @@
---Odd-Eyes Cross Skill
---Scripted by ChatGPT
 local s,id=GetID()
 
 local CROSS_COUNTER=0x8083

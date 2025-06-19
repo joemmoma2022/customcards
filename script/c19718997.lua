@@ -1,5 +1,3 @@
---Gem-Knight Inferno Skill
---Scripted by ChatGPT
 local s,id=GetID()
 
 -- Counter ID for Inferno Counter

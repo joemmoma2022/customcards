@@ -1,4 +1,3 @@
---Last Stand Spirit
 local s,id=GetID()
 function s.initial_effect(c)
 	-- Activate in response to damage or effect that would reduce LP to 0

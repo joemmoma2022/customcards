@@ -1,5 +1,3 @@
---Gem-Knight Inferno Crystal
---Scripted by ChatGPT
 local s,id=GetID()
 function s.initial_effect(c)
     c:EnableCounterPermit(0x1319) -- Inferno Counter

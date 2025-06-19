@@ -1,5 +1,3 @@
--- Super Speed Negation Skill
--- Banish 1 Spell from hand to negate a Super Speed card and Set Turn Jump: Type SPEED!
 local s,id=GetID()
 local TURN_LEAP_ID=19712873
 

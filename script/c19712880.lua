@@ -1,6 +1,3 @@
--- Malevolent Takeover
--- Custom Spell Card
--- Card ID placeholder: 19720002 (replace with actual ID)
 local s,id=GetID()
 local MALEVOLENT_SIN_ID=80796456
 function s.initial_effect(c)

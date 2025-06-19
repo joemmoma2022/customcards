@@ -1,4 +1,3 @@
---Neo-Spacian Rocket
 local s,id=GetID()
 function s.initial_effect(c)
     --Special Summon if you control Elemental HERO Neos

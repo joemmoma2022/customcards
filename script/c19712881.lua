@@ -1,5 +1,3 @@
--- Insect Assistant
--- Card ID placeholder: 19720001 (change as needed)
 local s,id=GetID()
 function s.initial_effect(c)
 	-- Special Summon from hand if you control an Insect monster

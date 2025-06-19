@@ -1,4 +1,3 @@
---Custom Gem-Archetype Monster
 local s,id=GetID()
 function s.initial_effect(c)
     -- Also treated as Rock and Insect

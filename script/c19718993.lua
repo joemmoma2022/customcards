@@ -1,4 +1,3 @@
--- Noble Justice and Vengeance
 local s,id=GetID()
 function s.initial_effect(c)
 	aux.AddSkillProcedure(c,2,false,s.flipcon,s.flipop)

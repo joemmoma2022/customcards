@@ -1,5 +1,3 @@
--- Digital Distortion
--- Scripted by You
 local s,id=GetID()
 
 -- Counter ID

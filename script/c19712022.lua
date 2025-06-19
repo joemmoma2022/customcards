@@ -1,4 +1,3 @@
---Strike Shot
 local s,id=GetID()
 function s.initial_effect(c)
     -- Activate: Send 1 "Strike" card from hand or Deck to GY; inflict 500 damage

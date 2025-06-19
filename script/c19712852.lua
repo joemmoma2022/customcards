@@ -1,4 +1,3 @@
---Custom Jurrac Monster
 local s,id=GetID()
 function s.initial_effect(c)
     --Special Summon itself from hand (once per turn)

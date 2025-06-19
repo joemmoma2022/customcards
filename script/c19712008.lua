@@ -1,4 +1,3 @@
---Wind-Up Blaster (Cost-Based Damage)
 local s,id=GetID()
 function s.initial_effect(c)
 	--activation

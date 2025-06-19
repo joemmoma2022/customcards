@@ -1,4 +1,3 @@
---Custom Noble Knight Support Monster
 local s,id=GetID()
 function s.initial_effect(c)
     --Special Summon from hand

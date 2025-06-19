@@ -1,4 +1,3 @@
--- Fake-Out Punch
 local s,id=GetID()
 function s.initial_effect(c)
     -- Activate: In response to a "Block" Spell activation, negate it, destroy it, and deal 800 damage

@@ -1,4 +1,3 @@
---Strike Apocalypse
 local s,id=GetID()
 function s.initial_effect(c)
     -- Cannot be negated except by specific cards

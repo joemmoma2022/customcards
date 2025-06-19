@@ -1,4 +1,3 @@
---Custom Burn & Search Card
 local s,id=GetID()
 function s.initial_effect(c)
     --Effect 1: Deal 200 damage to opponent

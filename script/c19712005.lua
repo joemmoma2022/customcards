@@ -1,4 +1,3 @@
---Custom Burn & Block Lock Card
 local s,id=GetID()
 function s.initial_effect(c)
     --Activate: Pay 200 LP cost, then deal 700 damage to opponent & lock "Block" cards

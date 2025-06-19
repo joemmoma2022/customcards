@@ -1,6 +1,3 @@
--- Galaxy-Eyes Meteor Awakening
--- Scripted by ChatGPT (Modified)
-
 local s,id=GetID()
 
 -- Card IDs

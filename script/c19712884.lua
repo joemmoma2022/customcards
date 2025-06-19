@@ -1,5 +1,3 @@
--- Odd-Eyes Cross Z Quick-Play Spell
--- Scripted by You
 local s,id=GetID()
 
 local CROSS_COUNTER=0x8083

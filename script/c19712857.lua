@@ -1,4 +1,3 @@
---T.G. Destroyer (Placeholder name)
 local s,id=GetID()
 function s.initial_effect(c)
     -- Destroy 1 card if Special Summoned by a T.G. monster

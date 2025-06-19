@@ -1,4 +1,3 @@
---Kick Lockdown
 local s,id=GetID()
 function s.initial_effect(c)
     -- Activate in response to a valid Kick card

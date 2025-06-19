@@ -1,5 +1,3 @@
--- Malevolent Evolution
--- Scripted by You
 local s,id=GetID()
 
 local C70_ID=19712842

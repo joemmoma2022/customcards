@@ -1,4 +1,3 @@
---Battle Planning
 local s,id=GetID()
 function s.initial_effect(c)
     -- Activate: Choose 1 card from your Deck and place it on top

@@ -1,4 +1,3 @@
--- Arcanite Fire Conjuring
 local s,id=GetID()
 local FIRE_MAG_ID=19712843
 local INCANTATION_ID=19712875

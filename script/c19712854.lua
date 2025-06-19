@@ -1,4 +1,3 @@
---Jurrac Rex Revi (cleaned version)
 local s,id=GetID()
 function s.initial_effect(c)
     --Synchro Summon

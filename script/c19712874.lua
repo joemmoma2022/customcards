@@ -1,5 +1,3 @@
---Worm's Speed
---Scripted by [Your Name]
 local s,id=GetID()
 function s.initial_effect(c)
 	-- Activate during opponent's turn

@@ -1,4 +1,3 @@
---Custom Galaxy-Eyes Xyz
 local s,id=GetID()
 function s.initial_effect(c)
     --Standard Xyz Summon

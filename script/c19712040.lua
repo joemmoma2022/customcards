@@ -1,4 +1,3 @@
--- Triple Draw Field
 local s,id=GetID()
 local draw_done={} -- global per duel table, tracks per player if drawn
 

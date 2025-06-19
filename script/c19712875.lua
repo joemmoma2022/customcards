@@ -1,6 +1,3 @@
--- Fire Magicians' Incantation
--- Scripted by ChatGPT
-
 local s,id=GetID()
 local ARC_MAG_ID=31924889
 local ARC_WIZ_ID=19712843

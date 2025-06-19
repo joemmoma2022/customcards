@@ -1,4 +1,3 @@
---Elemental HERO Rocket Neos
 local s,id=GetID()
 function s.initial_effect(c)
     --Fusion material

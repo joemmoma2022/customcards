@@ -1,4 +1,3 @@
---Sanctuary Eclipse
 local s,id=GetID()
 local SANCTUARY_ID=56433456
 

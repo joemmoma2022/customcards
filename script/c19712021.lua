@@ -1,4 +1,3 @@
---Backlash Echo
 local s,id=GetID()
 function s.initial_effect(c)
     -- Activation condition: You take damage from opponent's card

@@ -1,4 +1,3 @@
--- Discard Draw
 local s,id=GetID()
 function s.initial_effect(c)
     -- Activate: Discard 1, draw 1, then shuffle deck

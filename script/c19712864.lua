@@ -1,4 +1,3 @@
---The Agent Hyperion Ascendant
 local s,id=GetID()
 local HYPERION_ID=55794644
 local SANCTUARY_ID=56433456

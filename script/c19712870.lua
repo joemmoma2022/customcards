@@ -1,4 +1,3 @@
---Galaxy Meteorstrike
 local s,id=GetID()
 function s.initial_effect(c)
     -- Equip only to a "Galaxy-Eyes" monster

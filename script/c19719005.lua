@@ -1,5 +1,3 @@
--- Ancient Gear Reinforcement
--- Scripted by You
 local s,id=GetID()
 
 local GREASED_GOLEM_ID=19712882

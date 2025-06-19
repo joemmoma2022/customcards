@@ -1,4 +1,3 @@
--- Worm's Speed Skill
 local s,id=GetID()
 local WORM_SPEED_ID=19712874
 

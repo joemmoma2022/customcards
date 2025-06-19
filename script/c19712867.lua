@@ -1,4 +1,3 @@
---The Agent of Hope - Live
 local s,id=GetID()
 local SANCTUARY_ID=56433456
 
