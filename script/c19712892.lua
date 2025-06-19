@@ -22,7 +22,7 @@ end
 
 -- Filter for "Night Vision the Phantom Pigeon"
 function s.spfilter(c,e,tp)
-    return c:IsCode(19712887) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+    return c:IsCode(160005034) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 
 -- Target check: can summon from hand, deck, or GY
