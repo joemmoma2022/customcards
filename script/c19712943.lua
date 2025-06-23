@@ -1,6 +1,8 @@
+--Masked HERO Possessor (example name)
 local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
+    
     -- Must be Special Summoned with "Mask Change"
     local e0=Effect.CreateEffect(c)
     e0:SetType(EFFECT_TYPE_SINGLE)
@@ -34,22 +36,20 @@ function s.initial_effect(c)
     c:RegisterEffect(e2)
 end
 
-function s.eqfilter(c)
-    return c:IsFaceup() and c:IsControler(1) -- opponent's monster
-end
-
+-- Target 1 face-up opponent's monster if there's no equip already
 function s.eqtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
     if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(1-tp) and chkc:IsFaceup() end
     if chk==0 then 
         return Duel.GetLocationCount(tp,LOCATION_SZONE)>0
-           and Duel.IsExistingTarget(Card.IsFaceup,tp,0,LOCATION_MZONE,1,nil)
-           and e:GetHandler():GetEquipGroup():FilterCount(Card.IsType,nil,TYPE_MONSTER)==0
+            and Duel.IsExistingTarget(Card.IsFaceup,tp,0,LOCATION_MZONE,1,nil)
+            and e:GetHandler():GetEquipGroup():FilterCount(Card.IsType,nil,TYPE_MONSTER)==0
     end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_EQUIP)
     Duel.SelectTarget(tp,Card.IsFaceup,tp,0,LOCATION_MZONE,1,1,nil)
     Duel.SetOperationInfo(0,CATEGORY_EQUIP,nil,1,0,0)
 end
 
+-- Equip the selected monster, gain its ATK
 function s.eqop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     if Duel.GetLocationCount(tp,LOCATION_SZONE)<=0 or c:IsFacedown() or not c:IsRelateToEffect(e) then return end
@@ -78,12 +78,12 @@ function s.eqop(e,tp,eg,ep,ev,re,r,rp)
     e2:SetValue(atk)
     e2:SetReset(RESET_EVENT+RESETS_STANDARD)
     c:RegisterEffect(e2)
-    
-    -- Store the equipped monster for destruction when this card leaves the field
-    c:SetFlagEffectLabel(id,tc:GetFieldID())
-    c:SetLabelObject(tc)
+
+    -- Optional: store equipped monster's FieldID if you want to track it
+    c:RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD,0,1,tc:GetFieldID())
 end
 
+-- When this card leaves the field, destroy any monster it had equipped
 function s.leaveop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     local eqg=c:GetEquipGroup():Filter(Card.IsType,nil,TYPE_MONSTER)
