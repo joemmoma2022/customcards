@@ -10,7 +10,7 @@ function s.initial_effect(c)
 	e1:SetCondition(s.spcon)
 	c:RegisterEffect(e1)
 
-	-- Tribute 1 WATER monster; shuffle 1 opponent's monster into Deck
+	-- Tribute 1 WATER monster except this card; shuffle 1 opponent's monster into Deck; no direct attacks this turn
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_TODECK)
@@ -35,13 +35,13 @@ function s.spcon(e,c)
 		and Duel.GetLocationCount(tp,LOCATION_MZONE)>0
 end
 
--- Tribute 1 WATER monster cost
-function s.costfilter(c)
-	return c:IsAttribute(ATTRIBUTE_WATER) and c:IsReleasable()
+-- Tribute 1 WATER monster except this card as cost
+function s.costfilter(c,e)
+	return c:IsAttribute(ATTRIBUTE_WATER) and c:IsReleasable() and not c:IsCode(e:GetHandler():GetCode())
 end
 function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.CheckReleaseGroup(tp,s.costfilter,1,nil) end
-	local g=Duel.SelectReleaseGroup(tp,s.costfilter,1,1,nil)
+	if chk==0 then return Duel.CheckReleaseGroup(tp,s.costfilter,1,nil,e) end
+	local g=Duel.SelectReleaseGroup(tp,s.costfilter,1,1,nil,e)
 	Duel.Release(g,REASON_COST)
 end
 
@@ -54,10 +54,19 @@ function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	Duel.SetOperationInfo(0,CATEGORY_TODECK,g,1,0,0)
 end
 
--- Operation: shuffle targeted monster into Deck
+-- Operation: shuffle targeted monster into Deck and apply no direct attacks effect
 function s.operation(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
 	if tc and tc:IsRelateToEffect(e) then
-		Duel.SendtoDeck(tc,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)
+		if Duel.SendtoDeck(tc,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)~=0 then
+			-- Cannot attack directly this turn
+			local e1=Effect.CreateEffect(e:GetHandler())
+			e1:SetType(EFFECT_TYPE_FIELD)
+			e1:SetCode(EFFECT_CANNOT_DIRECT_ATTACK)
+			e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET+EFFECT_FLAG_OATH)
+			e1:SetTargetRange(1,0)
+			e1:SetReset(RESET_PHASE+PHASE_END)
+			Duel.RegisterEffect(e1,tp)
+		end
 	end
 end

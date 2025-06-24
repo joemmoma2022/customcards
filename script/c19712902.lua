@@ -1,7 +1,7 @@
---Skip Turn Surge
+-- Skip Turn Surge (modified)
 local s,id=GetID()
 function s.initial_effect(c)
-	-- Activate during opponent's turn to skip their turn
+	-- Activate during opponent's turn to skip their turn and skip your next Battle Phase
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
 	e1:SetCode(EVENT_FREE_CHAIN)
@@ -10,7 +10,18 @@ function s.initial_effect(c)
 	e1:SetOperation(s.activate)
 	c:RegisterEffect(e1)
 
-	-- Banish instead of sending to GY
+	-- You cannot conduct your next Battle Phase after activation
+	local e1b=Effect.CreateEffect(c)
+	e1b:SetType(EFFECT_TYPE_FIELD)
+	e1b:SetProperty(EFFECT_FLAG_PLAYER_TARGET+EFFECT_FLAG_OATH)
+	e1b:SetCode(EFFECT_CANNOT_BP)
+	e1b:SetTargetRange(1,0)
+	e1b:SetReset(RESET_PHASE+PHASE_END+RESET_SELF_TURN,2) -- disables your next Battle Phase only
+	e1b:SetCondition(s.bpcon)
+	e1b:SetLabelObject(e1)
+	c:RegisterEffect(e1b)
+
+	-- Redirect to banish when sent to GY
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
 	e2:SetCode(EFFECT_TO_GRAVE_REDIRECT)
@@ -37,15 +48,23 @@ function s.condition(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetTurnPlayer()~=tp
 end
 
--- Skip opponent's entire turn
+-- Skip opponent's entire turn, duel resumes on your Standby Phase
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	local opp=Duel.GetTurnPlayer()
-	Duel.SkipPhase(opp, PHASE_DRAW,    RESET_PHASE+PHASE_END, 1)
-	Duel.SkipPhase(opp, PHASE_STANDBY, RESET_PHASE+PHASE_END, 1)
-	Duel.SkipPhase(opp, PHASE_MAIN1,   RESET_PHASE+PHASE_END, 1)
-	Duel.SkipPhase(opp, PHASE_BATTLE,  RESET_PHASE+PHASE_END, 1, 1)
-	Duel.SkipPhase(opp, PHASE_MAIN2,   RESET_PHASE+PHASE_END, 1)
-	Duel.SkipPhase(opp, PHASE_END,     RESET_PHASE+PHASE_END, 1)
+	-- Skip opponent's phases this turn
+	Duel.SkipPhase(opp,PHASE_DRAW,RESET_PHASE+PHASE_END,1)
+	Duel.SkipPhase(opp,PHASE_STANDBY,RESET_PHASE+PHASE_END,1)
+	Duel.SkipPhase(opp,PHASE_MAIN1,RESET_PHASE+PHASE_END,1)
+	Duel.SkipPhase(opp,PHASE_BATTLE,RESET_PHASE+PHASE_END,1)
+	Duel.SkipPhase(opp,PHASE_MAIN2,RESET_PHASE+PHASE_END,1)
+	Duel.SkipPhase(opp,PHASE_END,RESET_PHASE+PHASE_END,1)
+	-- Register flag for skipping your next Battle Phase
+	e:GetHandler():RegisterFlagEffect(id,RESET_PHASE+PHASE_END+RESET_SELF_TURN,0,2)
+end
+
+-- Condition for your next Battle Phase skip
+function s.bpcon(e)
+	return e:GetHandler():GetFlagEffect(id)>0
 end
 
 -- Cost: Banish this card from your GY
