@@ -4,13 +4,13 @@ function s.initial_effect(c)
     c:SetUniqueOnField(1,0,id)
     c:EnableReviveLimit()
 
-    -- Must be Special Summoned with "Mask Change"
+    -- Must be Special Summoned by "Masked HERO - Traveler"
     local e0=Effect.CreateEffect(c)
     e0:SetType(EFFECT_TYPE_SINGLE)
     e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
     e0:SetCode(EFFECT_SPSUMMON_CONDITION)
     e0:SetValue(function(e,se,sp,st)
-        return se and se:GetHandler():IsCode(21143940) -- Mask Change
+        return se and se:GetHandler():IsCode(19712009) -- Masked HERO - Traveler
     end)
     c:RegisterEffect(e0)
 
