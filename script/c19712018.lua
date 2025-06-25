@@ -1,64 +1,71 @@
+--Hope 1 (Quick-Play Version with Discard)
 local s,id=GetID()
 function s.initial_effect(c)
-	-- Activate in response to damage or effect that would reduce LP to 0
-	local e1=Effect.CreateEffect(c)
-	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_DAMAGE)
-	e1:SetType(EFFECT_TYPE_QUICK_O)
-	e1:SetCode(EVENT_CHAINING)
-	e1:SetProperty(EFFECT_FLAG_DAMAGE_STEP+EFFECT_FLAG_DAMAGE_CAL)
-	e1:SetRange(LOCATION_HAND)
-	e1:SetCondition(s.actcon)
-	e1:SetTarget(s.target)
-	e1:SetOperation(s.activate)
-	c:RegisterEffect(e1)
+    -- Activate as Quick-Play
+    local e1=Effect.CreateEffect(c)
+    e1:SetCategory(CATEGORY_RECOVER)
+    e1:SetType(EFFECT_TYPE_ACTIVATE)
+    e1:SetCode(EVENT_FREE_CHAIN)
+    e1:SetProperty(EFFECT_FLAG_DAMAGE_STEP+EFFECT_FLAG_DAMAGE_CAL)
+    e1:SetHintTiming(0,TIMING_DAMAGE_STEP+TIMING_DAMAGE_CAL)
+    e1:SetCost(s.cost)
+    e1:SetOperation(s.activate)
+    c:RegisterEffect(e1)
 
-	-- Also allow activation in response to battle damage
-	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,0))
-	e2:SetCategory(CATEGORY_DAMAGE)
-	e2:SetType(EFFECT_TYPE_QUICK_O)
-	e2:SetCode(EVENT_PRE_BATTLE_DAMAGE)
-	e2:SetRange(LOCATION_HAND)
-	e2:SetCondition(s.battlecon)
-	e2:SetTarget(s.target)
-	e2:SetOperation(s.activate)
-	c:RegisterEffect(e2)
+    -- Global check to apply LP lock
+    aux.GlobalCheck(s,function()
+        local ge1=Effect.CreateEffect(c)
+        ge1:SetType(EFFECT_TYPE_FIELD)
+        ge1:SetCode(EFFECT_CANNOT_LOSE_LP)
+        ge1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
+        ge1:SetTargetRange(1,0)
+        ge1:SetLabel(0)
+        ge1:SetCondition(s.con2)
+        Duel.RegisterEffect(ge1,0)
+
+        local ge2=ge1:Clone()
+        ge2:SetLabel(1)
+        Duel.RegisterEffect(ge2,1)
+
+        local ge3=Effect.CreateEffect(c)
+        ge3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+        ge3:SetCode(EVENT_ADJUST)
+        ge3:SetOperation(s.op)
+        Duel.RegisterEffect(ge3,0)
+    end)
 end
 
--- Condition for chain damage that would reduce LP to 0 or less
-function s.actcon(e,tp,eg,ep,ev,re,r,rp)
-	if Duel.GetTurnPlayer()==tp then return false end -- opponent's turn only
-	if ep~=tp then return false end -- damage to you
-	if not re or not re:IsActiveType(TYPE_MONSTER+TYPE_SPELL+TYPE_TRAP) then return false end
-	local ex,_,dam=Duel.GetOperationInfo(ev,CATEGORY_DAMAGE)
-	if ex and dam and dam>=Duel.GetLP(tp) then
-		return true
-	end
-	return false
+-- Global LP lock condition
+function s.con2(e)
+    return Duel.GetFlagEffect(e:GetLabel(),511002521)>0
 end
 
--- Condition for battle damage that would reduce LP to 0 or less
-function s.battlecon(e,tp,eg,ep,ev,re,r,rp)
-	if Duel.GetTurnPlayer()==tp then return false end -- opponent's turn only
-	return ep==tp and Duel.GetLP(tp)<=ev and ev>0
+-- Maintain flag for LP tracking
+function s.op(e,tp,eg,ep,ev,re,r,rp)
+    local ph=Duel.GetCurrentPhase()
+    if Duel.GetLP(0)<=0 and ph~=PHASE_DAMAGE then
+        Duel.RaiseEvent(Duel.GetMatchingGroup(nil,0,LOCATION_ONFIELD,0,nil),511002521,e,0,0,0,0)
+        Duel.ResetFlagEffect(0,511002521)
+    end
+    if Duel.GetLP(1)<=0 and ph~=PHASE_DAMAGE then
+        Duel.RaiseEvent(Duel.GetMatchingGroup(nil,1,LOCATION_ONFIELD,0,nil),511002521,e,0,0,0,0)
+        Duel.ResetFlagEffect(1,511002521)
+    end
+    if Duel.GetLP(0)>0 and Duel.GetFlagEffect(0,511002521)==0 then
+        Duel.RegisterFlagEffect(0,511002521,0,0,1)
+    end
+    if Duel.GetLP(1)>0 and Duel.GetFlagEffect(1,511002521)==0 then
+        Duel.RegisterFlagEffect(1,511002521,0,0,1)
+    end
 end
 
-function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return true end
-	Duel.SetOperationInfo(0,CATEGORY_DAMAGE,nil,0,tp,0)
+-- New cost: discard 1 card
+function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
+    if chk==0 then return Duel.IsExistingMatchingCard(Card.IsDiscardable,tp,LOCATION_HAND,0,1,nil) end
+    Duel.DiscardHand(tp,Card.IsDiscardable,1,1,REASON_COST+REASON_DISCARD)
 end
 
+-- Set LP to 1
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	Duel.SetLP(tp,1)
-	if e:GetCode()==EVENT_PRE_BATTLE_DAMAGE then
-		Duel.ChangeBattleDamage(tp,0)
-	end
-	-- End opponent's turn immediately
-	Duel.SkipPhase(1-tp,PHASE_BATTLE,RESET_PHASE+PHASE_END,1)
-	Duel.SkipPhase(1-tp,PHASE_MAIN2,RESET_PHASE+PHASE_END,1)
-	Duel.SkipPhase(1-tp,PHASE_END,RESET_PHASE+PHASE_END,1)
-	-- Banish this card instead of sending to GY
-	Duel.Remove(c,POS_FACEUP,REASON_EFFECT)
+    Duel.SetLP(tp,1,REASON_EFFECT)
 end

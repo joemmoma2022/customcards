@@ -1,5 +1,5 @@
 local s,id=GetID()
-local PUNCH_ARC=0x1801  -- or change to 0x1801 for Kick
+local PUNCH_ARC=0x3904  -- or change to 0x1801 for Kick
 
 function s.initial_effect(c)
     -- Activate this card (Continuous Spell)

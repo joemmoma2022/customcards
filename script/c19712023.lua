@@ -12,10 +12,10 @@ function s.initial_effect(c)
     c:RegisterEffect(e1)
 end
 
--- Returns true if the card is Kick (0x1801), optionally Strike (0x0801),
+-- Returns true if the card is Kick (0x3904), optionally Strike (0x0801),
 -- but not Punch, Blast, Slash, or Final Strike
 function s.isKickOnly(rc)
-    return rc:IsSetCard(0x1801) -- Must be Kick
+    return rc:IsSetCard(0x3904) -- Must be Kick
         and not rc:IsSetCard(0x3801) -- Not Punch
         and not rc:IsSetCard(0x5801) -- Not Blast
         and not rc:IsSetCard(0x4801) -- Not Slash

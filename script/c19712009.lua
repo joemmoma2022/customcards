@@ -36,7 +36,7 @@ end
 
 -- Filters
 function s.spfilter(c,e,tp)
-    return c:IsSetCard(0xa008) and c:IsCanBeSpecialSummoned(e,0,tp,true,true)
+    return c:IsSetCard(0x9645) and c:IsCanBeSpecialSummoned(e,0,tp,true,true)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
     local c=e:GetHandler()
