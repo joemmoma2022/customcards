@@ -9,13 +9,12 @@ function s.initial_effect(c)
 	e0:SetValue(ATTRIBUTE_WATER)
 	c:RegisterEffect(e0)
 
-	-- Banish self if "Abyssal Sea Dragon Abyss Kraken" is not on field
+	-- Auto-banish self if "Abyss Kraken Main" is not on the field
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 	e1:SetCode(EVENT_ADJUST)
 	e1:SetRange(LOCATION_MZONE)
-	e1:SetCondition(s.banishcon)
-	e1:SetOperation(s.banishop)
+	e1:SetOperation(s.check_banish)
 	c:RegisterEffect(e1)
 
 	-- Once per turn: Reduce this card's ATK, opponent's monsters lose same
@@ -29,14 +28,12 @@ function s.initial_effect(c)
 	e2:SetOperation(s.atkop)
 	c:RegisterEffect(e2)
 
-	-- On destruction: take 500 damage
+	-- Inflict 500 damage when this card leaves your field
 	local e3=Effect.CreateEffect(c)
 	e3:SetCategory(CATEGORY_DAMAGE)
-	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_F)
-	e3:SetCode(EVENT_DESTROYED)
-	e3:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-	e3:SetTarget(s.damtg)
-	e3:SetOperation(s.damop)
+	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
+	e3:SetCode(EVENT_LEAVE_FIELD)
+	e3:SetOperation(s.leaveop)
 	c:RegisterEffect(e3)
 
 	-- Once per turn, cannot be destroyed by card effects
@@ -50,25 +47,22 @@ function s.initial_effect(c)
 	c:RegisterEffect(e4)
 end
 
--- Kraken presence check
+-- Banish if Kraken Main is not on the field
 function s.krakenfilter(c)
-	return c:IsFaceup() and c:IsCode(19712934) -- Abyssal Sea Dragon Abyss Kraken
+	return c:IsFaceup() and c:IsCode(19712934) -- Abyss Kraken Main
 end
-function s.banishcon(e,tp,eg,ep,ev,re,r,rp)
-	return not Duel.IsExistingMatchingCard(s.krakenfilter,e:GetHandlerPlayer(),LOCATION_ONFIELD,0,1,nil)
-end
-function s.banishop(e,tp,eg,ep,ev,re,r,rp)
+function s.check_banish(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	if c:IsRelateToEffect(e) then
+	if not Duel.IsExistingMatchingCard(s.krakenfilter,tp,LOCATION_ONFIELD,0,1,nil)
+		and c:IsOnField() then
+		Duel.Hint(HINT_CARD,tp,id)
 		Duel.Remove(c,POS_FACEUP,REASON_EFFECT)
 	end
 end
 
 -- ATK reduction effect
 function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then
-		return e:GetHandler():GetAttack()>=100
-	end
+	if chk==0 then return e:GetHandler():GetAttack()>=100 end
 end
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
@@ -101,19 +95,15 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Damage when destroyed
-function s.damtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return true end
-	Duel.SetTargetPlayer(tp)
-	Duel.SetTargetParam(500)
-	Duel.SetOperationInfo(0,CATEGORY_DAMAGE,nil,0,tp,500)
-end
-function s.damop(e,tp,eg,ep,ev,re,r,rp)
-	local p,d=Duel.GetChainInfo(0,CHAININFO_TARGET_PLAYER,CHAININFO_TARGET_PARAM)
-	Duel.Damage(p,d,REASON_EFFECT)
+-- Inflict 500 damage when this card leaves your field
+function s.leaveop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	if c:IsPreviousLocation(LOCATION_ONFIELD) and c:IsPreviousControler(tp) then
+		Duel.Damage(tp,500,REASON_EFFECT)
+	end
 end
 
--- Destruction prevention once per turn (by effect)
+-- Destruction prevention (by effects) once per turn
 function s.indval(e,re,r,rp)
 	return (r & REASON_EFFECT) ~= 0
 end

@@ -1,4 +1,4 @@
---Abyssal Sea Dragon Skill
+-- Abyssal Sea Dragon Skill
 local s,id=GetID()
 
 local KRAKEN_MAIN=19712934
@@ -52,7 +52,7 @@ function s.startup_op(e,tp,eg,ep,ev,re,r,rp)
 		e_hand:SetCode(EFFECT_HAND_LIMIT)
 		e_hand:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
 		e_hand:SetRange(LOCATION_SZONE)
-		e_hand:SetTargetRange(1,0) -- Only controller
+		e_hand:SetTargetRange(1,0)
 		e_hand:SetValue(100)
 		tracker:RegisterEffect(e_hand)
 	end
@@ -83,7 +83,7 @@ function s.startup_op(e,tp,eg,ep,ev,re,r,rp)
 	for i=1,2 do
 		if Duel.GetLocationCount(p,LOCATION_MZONE)>0 then
 			local g=Duel.GetMatchingGroup(function(tc)
-				return tc:IsCode(KRAKEN_R) and tc:IsCanBeSpecialSummoned(e,0,p,p,false,false,POS_FACEUP_ATTACK)
+				return tc:IsCode(KRAKEN_R) and tc:IsCanBeSpecialSummoned(e,0,p,false,false,POS_FACEUP_ATTACK)
 			end,p,LOCATION_DECK,0,nil)
 			if #g>0 then
 				Duel.SpecialSummon(g:GetFirst(),0,p,p,false,false,POS_FACEUP_ATTACK)
@@ -100,7 +100,7 @@ function s.startup_op(e,tp,eg,ep,ev,re,r,rp)
 	e_skip:SetReset(RESET_PHASE+PHASE_END,0)
 	Duel.RegisterEffect(e_skip,p)
 
-	-- Resummon Kraken [R] or [L] if they leave field (from hand or deck)
+	-- Resummon Kraken [L] or [R] if they leave the field (any zone)
 	local e_resum=Effect.CreateEffect(c)
 	e_resum:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 	e_resum:SetCode(EVENT_LEAVE_FIELD)
@@ -111,9 +111,11 @@ end
 
 function s.check_leave(e,tp,eg,ep,ev,re,r,rp)
 	local p=e:GetLabel()
-	local left=eg:Filter(Card.IsPreviousLocation,nil,LOCATION_MZONE)
-	for tc in aux.Next(left) do
-		if tc:IsPreviousControler(p) and (tc:IsCode(KRAKEN_L) or tc:IsCode(KRAKEN_R)) then
+	for tc in aux.Next(eg) do
+		if tc:IsPreviousControler(p)
+			and tc:IsPreviousLocation(LOCATION_ONFIELD)
+			and (tc:IsCode(KRAKEN_L) or tc:IsCode(KRAKEN_R)) then
+
 			if Duel.GetLocationCount(p,LOCATION_MZONE)>0 then
 				local g=Duel.GetMatchingGroup(function(c)
 					return c:IsCode(tc:GetCode()) and c:IsCanBeSpecialSummoned(e,0,p,false,false,POS_FACEUP_ATTACK)
