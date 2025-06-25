@@ -2,15 +2,14 @@
 local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
-    -- Must be Special Summoned with "Masked HERO - Traveler"
+    -- Must be Special Summoned with "Mask Change"
     local e0=Effect.CreateEffect(c)
     e0:SetType(EFFECT_TYPE_SINGLE)
     e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
     e0:SetCode(EFFECT_SPSUMMON_CONDITION)
-e0:SetValue(function(e,se,sp,st)
-    local c=e:GetHandler()
-    return c:IsLocation(LOCATION_EXTRA) and se and se:GetHandler():IsCode(19712009)
-end)
+    e0:SetValue(function(e,se,sp,st)
+        return se and se:GetHandler():IsCode(21143940) -- Mask Change
+    end)
     c:RegisterEffect(e0)
 
     -- When Summoned: Destroy 1 card on both sides (except this card), gain 500 ATK if destroyed

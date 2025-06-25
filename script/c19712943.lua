@@ -1,21 +1,19 @@
---Masked HERO Possessor (updated summoning condition)
+--Masked HERO Possessor (example name)
 local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
-
-    -- Must be Special Summoned with "Masked HERO - Traveler"
+    
+    -- Must be Special Summoned with "Mask Change"
     local e0=Effect.CreateEffect(c)
     e0:SetType(EFFECT_TYPE_SINGLE)
     e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
     e0:SetCode(EFFECT_SPSUMMON_CONDITION)
-   e0:SetValue(function(e,se,sp,st)
-    local c=e:GetHandler()
-    return c:IsLocation(LOCATION_EXTRA) and se and se:GetHandler():IsCode(19712009)
-end)
-
+    e0:SetValue(function(e,se,sp,st)
+        return se and se:GetHandler():IsCode(21143940) -- Mask Change
+    end)
     c:RegisterEffect(e0)
 
-    -- Quick Effect: Equip 1 opponent's monster and gain its ATK
+    -- Quick Effect: Target 1 monster your opponent controls, equip it to this card and gain its ATK
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_EQUIP)
@@ -60,8 +58,10 @@ function s.eqop(e,tp,eg,ep,ev,re,r,rp)
 
     if c:GetEquipGroup():FilterCount(Card.IsType,nil,TYPE_MONSTER)>0 then return end
 
+    -- Equip the opponent's monster to this card
     Duel.Equip(tp,tc,c,true)
 
+    -- Set equip limit so that the monster can only be equipped to this card
     local e1=Effect.CreateEffect(c)
     e1:SetType(EFFECT_TYPE_SINGLE)
     e1:SetCode(EFFECT_EQUIP_LIMIT)
@@ -69,6 +69,7 @@ function s.eqop(e,tp,eg,ep,ev,re,r,rp)
     e1:SetValue(function(e,c) return e:GetOwner()==c end)
     tc:RegisterEffect(e1)
 
+    -- Gain ATK equal to the equipped monster's current ATK
     local atk=tc:GetAttack()
     if atk<0 then atk=0 end
     local e2=Effect.CreateEffect(c)
@@ -78,6 +79,7 @@ function s.eqop(e,tp,eg,ep,ev,re,r,rp)
     e2:SetReset(RESET_EVENT+RESETS_STANDARD)
     c:RegisterEffect(e2)
 
+    -- Optional: store equipped monster's FieldID if you want to track it
     c:RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD,0,1,tc:GetFieldID())
 end
 
@@ -85,7 +87,7 @@ end
 function s.leaveop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     local eqg=c:GetEquipGroup():Filter(Card.IsType,nil,TYPE_MONSTER)
-    if #eqg>0 then
+    if eqg:GetCount()>0 then
         Duel.Destroy(eqg,REASON_EFFECT)
     end
 end
