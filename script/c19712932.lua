@@ -22,17 +22,18 @@ end
 -- Target 1 Spell/Trap your opponent controls
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsOnField() and chkc:IsControler(1-tp) and chkc:IsType(TYPE_SPELL+TYPE_TRAP) end
-	if chk==0 then return Duel.IsExistingTarget(aux.TRUE,tp,0,LOCATION_ONFIELD,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
-	local g=Duel.SelectTarget(tp,aux.TRUE,tp,0,LOCATION_ONFIELD,1,1,nil)
+	if chk==0 then return Duel.IsExistingTarget(aux.FilterFaceupFunction(Card.IsType,TYPE_SPELL+TYPE_TRAP),tp,0,LOCATION_ONFIELD,1,nil) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
+	local g=Duel.SelectTarget(tp,aux.FilterFaceupFunction(Card.IsType,TYPE_SPELL+TYPE_TRAP),tp,0,LOCATION_ONFIELD,1,1,nil)
 end
 
--- Delay destruction and damage to next opponent's End Phase
+-- Delay destruction and damage until opponent's next End Phase
 function s.operation(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
 	if not tc:IsRelateToEffect(e) then return end
 
 	local turn_id=Duel.GetTurnCount()
+
 	local e1=Effect.CreateEffect(e:GetHandler())
 	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 	e1:SetCode(EVENT_PHASE+PHASE_END)
@@ -48,7 +49,7 @@ function s.operation(e,tp,eg,ep,ev,re,r,rp)
 		end
 		e:Reset()
 	end)
-	e1:SetReset(RESET_PHASE+PHASE_END+RESET_OPPO_TURN,2)
 	e1:SetLabelObject(tc)
+	e1:SetReset(RESET_PHASE+PHASE_END+RESET_OPPO_TURN,2)
 	Duel.RegisterEffect(e1,tp)
 end
