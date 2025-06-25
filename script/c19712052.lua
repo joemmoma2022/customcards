@@ -50,7 +50,7 @@ function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
     Duel.Remove(g,POS_FACEUP,REASON_COST)
 end
 function s.cfilter(c)
-    return c:IsSetCard(0x3801) and c:IsAbleToRemoveAsCost()
+    return c:IsSetCard(0x0801) and c:IsAbleToRemoveAsCost()
 end
 
 -- Damage equal to opponent's current LP
