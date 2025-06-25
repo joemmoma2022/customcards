@@ -1,15 +1,21 @@
 local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
-    -- Must be Special Summoned with "Masked HERO - Traveler"
-    local e0=Effect.CreateEffect(c)
-    e0:SetType(EFFECT_TYPE_SINGLE)
-    e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
-    e0:SetCode(EFFECT_SPSUMMON_CONDITION)
-    e0:SetValue(function(e,se,sp,st)
-        return se and se:GetHandler():IsCode(19712009) -- Masked HERO - Traveler
-    end)
-    c:RegisterEffect(e0)
+    
+-- Must be Special Summoned by the effect of "Masked HERO - Traveler"
+local e0=Effect.CreateEffect(c)
+e0:SetType(EFFECT_TYPE_SINGLE)
+e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
+e0:SetCode(EFFECT_SPSUMMON_CONDITION)
+e0:SetValue(function(e,se,sp,st)
+    local c=e:GetHandler()
+    return c:IsLocation(LOCATION_EXTRA)
+        and se and se:GetHandler():IsCode(19712009)
+        and bit.band(st,SUMMON_TYPE_SPECIAL)==SUMMON_TYPE_SPECIAL
+end)
+c:RegisterEffect(e0)
+
+
 
     -- This card is also WATER and WIND attribute
     local e1=Effect.CreateEffect(c)

@@ -8,9 +8,11 @@ function s.initial_effect(c)
     e0:SetType(EFFECT_TYPE_SINGLE)
     e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
     e0:SetCode(EFFECT_SPSUMMON_CONDITION)
-    e0:SetValue(function(e,se,sp,st)
-        return se and se:GetHandler():IsCode(19712009) -- Masked HERO - Traveler
-    end)
+   e0:SetValue(function(e,se,sp,st)
+    local c=e:GetHandler()
+    return c:IsLocation(LOCATION_EXTRA) and se and se:GetHandler():IsCode(19712009)
+end)
+
     c:RegisterEffect(e0)
 
     -- Quick Effect: Equip 1 opponent's monster and gain its ATK

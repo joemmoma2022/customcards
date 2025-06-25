@@ -31,11 +31,21 @@ function s.initial_effect(c)
 	c:RegisterEffect(e2)
 end
 
--- Add "Masked Technique - Clock-Up!"
+-- Add "Masked Technique - Clock-Up!" and skip your next Battle Phase
 function s.addop(e,tp,eg,ep,ev,re,r,rp)
 	local token=Duel.CreateToken(tp,19712902)
 	Duel.SendtoHand(token,nil,REASON_RULE)
 	Duel.ConfirmCards(1-tp,token)
+	
+	-- Skip your next Battle Phase
+	local c=e:GetHandler()
+	local e1=Effect.CreateEffect(c)
+	e1:SetType(EFFECT_TYPE_FIELD)
+	e1:SetCode(EFFECT_SKIP_BP)
+	e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
+	e1:SetTargetRange(1,0)
+	e1:SetReset(RESET_PHASE+PHASE_END+RESET_SELF_TURN)
+	Duel.RegisterEffect(e1,tp)
 end
 
 -- If opponent activates a "Super Speed" card, negate and destroy it
