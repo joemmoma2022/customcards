@@ -13,16 +13,16 @@ function s.initial_effect(c)
 	c:RegisterEffect(e1)
 end
 
--- Filter to select opponent's monsters only
-function s.desfilter(c)
-	return c:IsFaceup() and c:IsLocation(LOCATION_MZONE) and c:IsControler(1)
+-- Filter: target any monster your opponent controls
+function s.desfilter(c,tp)
+	return c:IsControler(1-tp) and c:IsLocation(LOCATION_MZONE) and c:IsDestructable()
 end
 
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(1-tp) and chkc:IsFaceup() end
-	if chk==0 then return Duel.IsExistingTarget(s.desfilter,tp,0,LOCATION_MZONE,1,nil) end
+	if chkc then return s.desfilter(chkc,tp) end
+	if chk==0 then return Duel.IsExistingTarget(s.desfilter,tp,0,LOCATION_MZONE,1,nil,tp) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
-	local g=Duel.SelectTarget(tp,s.desfilter,tp,0,LOCATION_MZONE,1,1,nil)
+	local g=Duel.SelectTarget(tp,s.desfilter,tp,0,LOCATION_MZONE,1,1,nil,tp)
 	Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,1,0,0)
 	Duel.SetOperationInfo(0,CATEGORY_DAMAGE,nil,0,1-tp,500)
 end
@@ -32,7 +32,7 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	if tc and tc:IsRelateToEffect(e) and Duel.Destroy(tc,REASON_EFFECT)>0 then
 		Duel.Damage(1-tp,500,REASON_EFFECT)
 
-		-- Cannot attack this turn, except "Abyssal Sea Dragon Abyss Kraken" (ID: 19712934)
+		-- Opponent cannot attack this turn, except "Abyssal Sea Dragon Abyss Kraken" (19712934)
 		local e1=Effect.CreateEffect(e:GetHandler())
 		e1:SetType(EFFECT_TYPE_FIELD)
 		e1:SetCode(EFFECT_CANNOT_ATTACK)
