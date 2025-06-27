@@ -29,7 +29,7 @@ function s.startup_op(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_CARD,p,id)
 
 	-- Set LP to 40000
-	Duel.SetLP(p,35700)
+	Duel.SetLP(p,7500)
 
 	-- Place Field Spell "Boss Field - Raging Waves"
 	local existing_field=Duel.GetFieldCard(p,LOCATION_FZONE,0)
