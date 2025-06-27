@@ -1,6 +1,6 @@
 local s,id=GetID()
 function s.initial_effect(c)
-	-- Activate during opponent's turn, target 1 Spell/Trap, destroy it next End Phase and inflict 1000 damage
+	-- Activate during opponent's turn: target 1 Spell/Trap, destroy it during their End Phase and inflict 1000 damage
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_DESTROY+CATEGORY_DAMAGE)
@@ -19,37 +19,54 @@ function s.condition(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetTurnPlayer()~=tp
 end
 
--- Target 1 Spell/Trap your opponent controls
-function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsOnField() and chkc:IsControler(1-tp) and chkc:IsType(TYPE_SPELL+TYPE_TRAP) end
-	if chk==0 then return Duel.IsExistingTarget(aux.FilterFaceupFunction(Card.IsType,TYPE_SPELL+TYPE_TRAP),tp,0,LOCATION_ONFIELD,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
-	local g=Duel.SelectTarget(tp,aux.FilterFaceupFunction(Card.IsType,TYPE_SPELL+TYPE_TRAP),tp,0,LOCATION_ONFIELD,1,1,nil)
+-- Filter for face-up Spell/Trap your opponent controls
+function s.stfilter(c)
+	return c:IsFaceup() and c:IsType(TYPE_SPELL+TYPE_TRAP) and c:IsControler(1)
 end
 
--- Delay destruction and damage until opponent's next End Phase
+-- Target selection
+function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return s.stfilter(chkc) and chkc:IsOnField() end
+	if chk==0 then return Duel.IsExistingTarget(s.stfilter,tp,0,LOCATION_ONFIELD,1,nil) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
+	local g=Duel.SelectTarget(tp,s.stfilter,tp,0,LOCATION_ONFIELD,1,1,nil)
+end
+
+-- Delayed destruction + damage
 function s.operation(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
-	if not tc:IsRelateToEffect(e) then return end
+	if tc and tc:IsRelateToEffect(e) and tc:IsFaceup() and tc:IsType(TYPE_SPELL+TYPE_TRAP) then
+		tc:RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END,0,1)
+		tc:RegisterFlagEffect(id+1,RESET_EVENT+RESETS_STANDARD,0,1)
 
-	local turn_id=Duel.GetTurnCount()
-
-	local e1=Effect.CreateEffect(e:GetHandler())
-	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-	e1:SetCode(EVENT_PHASE+PHASE_END)
-	e1:SetCountLimit(1)
-	e1:SetCondition(function(e,tp,eg,ep,ev,re,r,rp)
-		return Duel.GetTurnPlayer()==1-tp and Duel.GetTurnCount()>turn_id
-	end)
-	e1:SetOperation(function(e,tp,eg,ep,ev,re,r,rp)
-		local tc=e:GetLabelObject()
-		if tc and tc:IsOnField() and tc:IsControler(1-tp) then
-			Duel.Destroy(tc,REASON_EFFECT)
-			Duel.Damage(1-tp,1000,REASON_EFFECT)
+		local de=Effect.CreateEffect(e:GetHandler())
+		de:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+		de:SetCode(EVENT_PHASE+PHASE_END)
+		de:SetCountLimit(1)
+		de:SetProperty(EFFECT_FLAG_IGNORE_IMMUNE)
+		de:SetLabelObject(tc)
+		de:SetCondition(s.descon)
+		de:SetOperation(s.desop)
+		if Duel.IsTurnPlayer(1-tp) and Duel.GetCurrentPhase()==PHASE_END then
+			de:SetLabel(Duel.GetTurnCount())
+			de:SetReset(RESET_PHASE+PHASE_END+RESET_OPPO_TURN,2)
+		else
+			de:SetLabel(0)
+			de:SetReset(RESET_PHASE+PHASE_END+RESET_OPPO_TURN)
 		end
-		e:Reset()
-	end)
-	e1:SetLabelObject(tc)
-	e1:SetReset(RESET_PHASE+PHASE_END+RESET_OPPO_TURN,2)
-	Duel.RegisterEffect(e1,tp)
+		Duel.RegisterEffect(de,tp)
+	end
+end
+
+function s.descon(e,tp,eg,ep,ev,re,r,rp)
+	local tc=e:GetLabelObject()
+	return Duel.IsTurnPlayer(1-tp) and Duel.GetTurnCount()~=e:GetLabel() and tc:GetFlagEffect(id+1)~=0
+end
+
+function s.desop(e,tp,eg,ep,ev,re,r,rp)
+	local tc=e:GetLabelObject()
+	if tc then
+		Duel.Destroy(tc,REASON_EFFECT)
+		Duel.Damage(1-tp,1000,REASON_EFFECT)
+	end
 end
