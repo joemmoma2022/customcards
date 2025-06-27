@@ -22,6 +22,7 @@ function s.initial_effect(c)
 	e2:SetDescription(aux.Stringid(id,0))
 	e2:SetCategory(CATEGORY_TODECK)
 	e2:SetType(EFFECT_TYPE_IGNITION)
+	e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
 	e2:SetRange(LOCATION_MZONE)
 	e2:SetCountLimit(1)
 	e2:SetTarget(s.tdtg)
@@ -76,6 +77,7 @@ function s.tdop(e,tp,eg,ep,ev,re,r,rp)
 	if tc and tc:IsRelateToEffect(e) then
 		Duel.SendtoDeck(tc,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)
 
+		-- Apply attack restriction to all your "Abyssal Kraken" support monsters (19712936)
 		local g=Duel.GetMatchingGroup(s.krakenRfilter,tp,LOCATION_MZONE,0,nil)
 		for kr in g:Iter() do
 			local e1=Effect.CreateEffect(e:GetHandler())
