@@ -17,7 +17,6 @@ end
 function s.op(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SKILL_FLIP,tp,id|(1<<32))
 	Duel.Hint(HINT_CARD,tp,id)
-	Duel.SetLP(tp,8000) -- Set LP to 8000 on skill flip
 end
 
 function s.flipcon(e,tp,eg,ep,ev,re,r,rp)
@@ -42,7 +41,7 @@ function s.flipop(e,tp,eg,ep,ev,re,r,rp)
 	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 	e1:SetCode(EVENT_BATTLE_DAMAGE)
 	e1:SetCondition(function(e,tp,eg,ep,ev,re,r,rp)
-		return ep==1-tp and Duel.GetBattleMonster(tp)==tc
+		return ep==1-tp and Duel.GetBattleMonster(tp) and Duel.GetBattleMonster(tp)==tc
 	end)
 	e1:SetOperation(function(e,tp,eg,ep,ev,re,r,rp)
 		Duel.Recover(tp,ev,REASON_EFFECT)
