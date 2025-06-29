@@ -1,10 +1,11 @@
 local s,id=GetID()
 function s.initial_effect(c)
-	-- Activate
+	-- Quick-Play Spell Activation
 	local e1=Effect.CreateEffect(c)
 	e1:SetCategory(CATEGORY_DESTROY)
-	e1:SetType(EFFECT_TYPE_ACTIVATE)
+	e1:SetType(EFFECT_TYPE_QUICK_O + EFFECT_TYPE_ACTIVATE)
 	e1:SetCode(EVENT_FREE_CHAIN)
+	e1:SetHintTiming(0,TIMING_MAIN_END+TIMING_BATTLE_END+TIMING_END_PHASE)
 	e1:SetTarget(s.target)
 	e1:SetOperation(s.activate)
 	c:RegisterEffect(e1)

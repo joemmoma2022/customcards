@@ -3,7 +3,7 @@ local CARD_UMI=22702055
 local BIG_UMI=19712909
 
 function s.initial_effect(c)
-	-- Special Summon from hand if "Umi" or "Big Umi" is on the field
+	-- Special Summon from hand by tributing 1 WATER monster if "Umi" or "Big Umi" is on the field
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetType(EFFECT_TYPE_FIELD)
@@ -11,9 +11,10 @@ function s.initial_effect(c)
 	e1:SetProperty(EFFECT_FLAG_UNCOPYABLE)
 	e1:SetRange(LOCATION_HAND)
 	e1:SetCondition(s.spcon)
+	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
 
-	-- Gain 300 ATK per WATER monster on the field except this card
+	-- Gain 300 ATK per WATER monster on the field except itself
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_SINGLE)
 	e2:SetCode(EFFECT_UPDATE_ATTACK)
@@ -22,7 +23,7 @@ function s.initial_effect(c)
 	e2:SetValue(s.atkval)
 	c:RegisterEffect(e2)
 
-	-- Once per turn: Send 1 WATER monster except this card to GY; target 1 opponent's monster, it loses 100 ATK per WATER monster on field except this card
+	-- Send 1 WATER you control to GY; debuff 1 opponent monster
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,1))
 	e3:SetCategory(CATEGORY_ATKCHANGE)
@@ -34,25 +35,34 @@ function s.initial_effect(c)
 	e3:SetOperation(s.operation)
 	c:RegisterEffect(e3)
 end
+s.listed_names={CARD_UMI,BIG_UMI}
 
-s.listed_names={BIG_UMI,CARD_UMI}
-
--- Special Summon Condition: "Umi" or "Big Umi" on field
-function s.spfilter(c)
-	return c:IsFaceup() and (c:IsCode(BIG_UMI) or c:IsCode(CARD_UMI))
+-- Check if "Umi" or "Big Umi" is face-up on the field
+function s.umifilter(c)
+	return c:IsFaceup() and (c:IsCode(CARD_UMI) or c:IsCode(BIG_UMI))
 end
+
+-- Special Summon condition: Umi or Big Umi on field + tributing 1 WATER monster
 function s.spcon(e,c)
 	if c==nil then return true end
-	return Duel.IsExistingMatchingCard(s.spfilter,c:GetControler(),LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil)
+	local tp=c:GetControler()
+	return Duel.IsExistingMatchingCard(s.umifilter,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil)
+		and Duel.CheckReleaseGroup(tp,Card.IsAttribute,1,nil,ATTRIBUTE_WATER)
 end
 
--- ATK gain for each WATER monster except this card on field
+-- Special Summon operation: tribute 1 WATER monster
+function s.spop(e,tp,eg,ep,ev,re,r,rp,c)
+	local g=Duel.SelectReleaseGroup(tp,Card.IsAttribute,1,1,nil,ATTRIBUTE_WATER)
+	Duel.Release(g,REASON_COST)
+end
+
+-- ATK gain: 300 × WATER monsters excluding this card
 function s.atkval(e,c)
 	local g=Duel.GetMatchingGroup(function(tc) return tc:IsAttribute(ATTRIBUTE_WATER) and tc~=c end,c:GetControler(),LOCATION_MZONE,LOCATION_MZONE,nil)
 	return g:GetCount()*300
 end
 
--- Cost: Send 1 WATER monster except this card you control to GY
+-- Cost: Send 1 WATER monster you control (not self)
 function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then 
 		return Duel.IsExistingMatchingCard(function(tc) return tc:IsAttribute(ATTRIBUTE_WATER) and tc:IsAbleToGraveAsCost() and tc~=e:GetHandler() end,tp,LOCATION_MZONE,0,1,nil) 
@@ -62,15 +72,15 @@ function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
 	Duel.SendtoGrave(g,REASON_COST)
 end
 
--- Target 1 opponent's monster
+-- Target opponent's monster
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsControler(1-tp) and chkc:IsLocation(LOCATION_MZONE) end
-	if chk==0 then return Duel.IsExistingTarget(aux.TRUE,tp,0,LOCATION_MZONE,1,nil) end
+	if chkc then return chkc:IsControler(1-tp) and chkc:IsLocation(LOCATION_MZONE) and chkc:IsFaceup() end
+	if chk==0 then return Duel.IsExistingTarget(Card.IsFaceup,tp,0,LOCATION_MZONE,1,nil) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
-	Duel.SelectTarget(tp,aux.TRUE,tp,0,LOCATION_MZONE,1,1,nil)
+	Duel.SelectTarget(tp,Card.IsFaceup,tp,0,LOCATION_MZONE,1,1,nil)
 end
 
--- Apply ATK decrease: 100 ATK per WATER monster on field except this card
+-- Debuff: -100 ATK per WATER on field (except this card)
 function s.operation(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
 	local c=e:GetHandler()

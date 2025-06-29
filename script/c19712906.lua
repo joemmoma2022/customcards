@@ -13,7 +13,7 @@ function s.initial_effect(c)
 	e0:SetCondition(s.spcon)
 	c:RegisterEffect(e0)
 
-	-- Once per turn: Tribute this card, Special Summon 1 "Dolphin King Iruqua" from hand or GY
+	-- Once per turn: Tribute this card, Special Summon 1 "Dolphin King Iruqua" from hand or GY, ignoring summoning conditions
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -30,6 +30,7 @@ end
 function s.umifilter(c)
 	return c:IsFaceup() and (c:IsCode(CARD_UMI) or c:IsCode(BIG_UMI))
 end
+
 function s.spcon(e,c)
 	if c==nil then return true end
 	return Duel.IsExistingMatchingCard(s.umifilter,c:GetControler(),LOCATION_ONFIELD,0,1,nil)
@@ -55,12 +56,12 @@ function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_HAND+LOCATION_GRAVE)
 end
 
--- Special Summon operation
+-- Special Summon operation, ignoring summoning conditions
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
 	local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_HAND+LOCATION_GRAVE,0,1,1,nil,e,tp)
 	if #g>0 then
-		Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
+		Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP,true) -- ignore summoning conditions
 	end
 end

@@ -1,14 +1,17 @@
+--Masked HERO - Type Breaker (example name)
 local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
-    -- Must be Special Summoned with "Mask Change"
+
+    -- Must be Special Summoned with "Masked HERO - Traveler"
     local e0=Effect.CreateEffect(c)
     e0:SetType(EFFECT_TYPE_SINGLE)
     e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
     e0:SetCode(EFFECT_SPSUMMON_CONDITION)
-    e0:SetValue(function(e,se,sp,st)
-        return se and se:GetHandler():IsCode(21143940) -- Mask Change
-    end)
+ e0:SetValue(function(e,se,sp,st)
+    local c=e:GetHandler()
+    return c:IsLocation(LOCATION_EXTRA) and se and se:GetHandler():IsCode(19712009)
+end)
     c:RegisterEffect(e0)
 
     -- Quick Effect: Discard 1 card, apply effect based on discarded card type
@@ -25,26 +28,25 @@ function s.initial_effect(c)
     c:RegisterEffect(e1)
 end
 
-function s.costfilter(c)
-    return c:IsDiscardable()
-end
-
+-- Cost: Discard 1 card and store its type
 function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingCard(s.costfilter,tp,LOCATION_HAND,0,1,e:GetHandler()) end
+    if chk==0 then return Duel.IsExistingMatchingCard(Card.IsDiscardable,tp,LOCATION_HAND,0,1,nil) end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DISCARD)
-    local g=Duel.SelectMatchingCard(tp,s.costfilter,tp,LOCATION_HAND,0,1,1,e:GetHandler())
-    e:SetLabel(g:GetFirst():GetType() & 0x7) -- store the basic type of discarded card: monster=1, spell=2, trap=4
-    Duel.SendtoGrave(g,REASON_COST+REASON_DISCARD)
+    local g=Duel.SelectMatchingCard(tp,Card.IsDiscardable,tp,LOCATION_HAND,0,1,1,nil)
+    if #g>0 then
+        local tc=g:GetFirst()
+        e:SetLabel(tc:GetOriginalType() & 0x7) -- Store basic type: 1=Monster, 2=Spell, 4=Trap
+        Duel.SendtoGrave(tc,REASON_COST+REASON_DISCARD)
+    end
 end
 
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
-    local c=e:GetHandler()
     local t=e:GetLabel()
     if chk==0 then
         if t==TYPE_MONSTER then
-            return true -- no targeting needed for double attack
+            return true
         elseif t==TYPE_TRAP then
-            return true -- no targeting needed for effect immunity
+            return true
         elseif t==TYPE_SPELL then
             return Duel.IsExistingMatchingCard(nil,tp,0,LOCATION_ONFIELD,1,nil)
         end

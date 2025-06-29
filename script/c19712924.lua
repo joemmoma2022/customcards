@@ -27,37 +27,48 @@ function s.initial_effect(c)
 	c:RegisterEffect(e2)
 end
 
--- Check if there's a Baby Mantis Token to tribute on either field
-function s.spfilter(c)
-	return c:IsFaceup() and c:IsCode(TOKEN_BABY_MANTIS) and c:IsReleasable()
+-- Filter for Baby Mantis Token releasable for summoning this card
+function s.tokenfilter(c,summoning_card)
+	if c:IsCode(TOKEN_BABY_MANTIS) then
+		if summoning_card then
+			-- Only allow if summoning card is Insect and token is releasable or token can be tributed for insects
+			if not summoning_card:IsRace(RACE_INSECT) then return false end
+			return c:IsReleasable() or c:IsType(TYPE_TOKEN)
+		else
+			return c:IsReleasable()
+		end
+	else
+		return c:IsReleasable()
+	end
 end
+
+-- Special summon condition: tribute 1 Baby Mantis Token on either field
 function s.spcon(e,c)
 	if c==nil then return true end
 	local tp=c:GetControler()
-	return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-		and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_MZONE,LOCATION_MZONE,1,nil)
+	local g=Duel.GetMatchingGroup(function(card) return s.tokenfilter(card,c) end,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
+	return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and #g>=1
 end
+
 function s.spop(e,tp,eg,ep,ev,re,r,rp,c)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RELEASE)
-	local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_MZONE,LOCATION_MZONE,1,1,nil)
+	local g=Duel.SelectMatchingCard(tp,function(card) return s.tokenfilter(card,c) end,tp,LOCATION_MZONE,LOCATION_MZONE,1,1,nil)
 	Duel.Release(g,REASON_COST)
 end
 
--- Destroy effect targeting
-function s.tokenfilter(c)
-	return c:IsFaceup() and c:IsCode(TOKEN_BABY_MANTIS) and c:IsReleasable()
-end
+-- Destroy effect: tribute 1 Baby Mantis Token to destroy 1 opponent card
 function s.destg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
-		return Duel.IsExistingMatchingCard(s.tokenfilter,tp,LOCATION_MZONE,LOCATION_MZONE,1,nil)
+		return Duel.IsExistingMatchingCard(function(c) return s.tokenfilter(c) end,tp,LOCATION_MZONE,LOCATION_MZONE,1,nil)
 			and Duel.IsExistingMatchingCard(aux.TRUE,tp,0,LOCATION_ONFIELD,1,nil)
 	end
 	Duel.SetOperationInfo(0,CATEGORY_RELEASE,nil,1,0,LOCATION_MZONE)
 	Duel.SetOperationInfo(0,CATEGORY_DESTROY,nil,1,0,LOCATION_ONFIELD)
 end
+
 function s.desop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RELEASE)
-	local rg=Duel.SelectMatchingCard(tp,s.tokenfilter,tp,LOCATION_MZONE,LOCATION_MZONE,1,1,nil)
+	local rg=Duel.SelectMatchingCard(tp,function(c) return s.tokenfilter(c) end,tp,LOCATION_MZONE,LOCATION_MZONE,1,1,nil)
 	if #rg>0 and Duel.Release(rg,REASON_COST)>0 then
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
 		local dg=Duel.SelectMatchingCard(tp,aux.TRUE,tp,0,LOCATION_ONFIELD,1,1,nil)
