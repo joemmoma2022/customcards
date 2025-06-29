@@ -1,6 +1,6 @@
 --Mantis Broodmother
 local s,id=GetID()
-local TOKEN_BABY_MANTIS=511009033
+local TOKEN_BABY_MANTIS=19712975 -- Your Token ID
 s.listed_series={0x535}
 
 function s.initial_effect(c)
@@ -46,7 +46,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp,c)
 	Duel.Release(g,REASON_COST)
 end
 
--- Cost: Discard any number of cards, store count
+-- Discard any number of cards
 function s.tkcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(Card.IsDiscardable,tp,LOCATION_HAND,0,1,nil) end
 	local ct=Duel.DiscardHand(tp,Card.IsDiscardable,1,63,REASON_COST+REASON_DISCARD)
@@ -95,36 +95,11 @@ function s.tkop(e,tp,eg,ep,ev,re,r,rp)
 		local token=Duel.CreateToken(p,TOKEN_BABY_MANTIS)
 		if Duel.SpecialSummonStep(token,0,p,p,false,false,POS_FACEUP) then
 			tokens:AddCard(token)
-
-			-- Tribute limit: only for Insect monsters
-			local e1=Effect.CreateEffect(e:GetHandler())
-			e1:SetType(EFFECT_TYPE_SINGLE)
-			e1:SetCode(EFFECT_UNRELEASABLE_SUM)
-			e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
-			e1:SetValue(s.rellimit)
-			e1:SetReset(RESET_EVENT+RESETS_STANDARD)
-			token:RegisterEffect(e1)
-
-			local e2=e1:Clone()
-			e2:SetCode(EFFECT_UNRELEASABLE_NONSUM)
-			token:RegisterEffect(e2)
-
-			-- Material limit: only for Insect monsters
-			local e3=Effect.CreateEffect(e:GetHandler())
-			e3:SetType(EFFECT_TYPE_SINGLE)
-			e3:SetCode(EFFECT_CANNOT_BE_MATERIAL)
-			e3:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
-			e3:SetValue(s.matlimit)
-			e3:SetReset(RESET_EVENT+RESETS_STANDARD)
-			token:RegisterEffect(e3)
-
-			-- Flag token for later destruction tracking
-			token:RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD,0,1)
 		end
 	end
 	Duel.SpecialSummonComplete()
 
-	-- Schedule destruction during the controller's next End Phase after this turn
+	-- Schedule self-destruction next turn's End Phase
 	local e3=Effect.CreateEffect(e:GetHandler())
 	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 	e3:SetCode(EVENT_PHASE+PHASE_END)
@@ -137,24 +112,13 @@ function s.tkop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.RegisterEffect(e3,tp)
 end
 
--- Tribute restriction: can only be tributed for Insect monsters
-function s.rellimit(e,c)
-	return not c:IsRace(RACE_INSECT)
-end
-
--- Material restriction: can only be used as material for Insect monsters
-function s.matlimit(e,c)
-	return not c:IsRace(RACE_INSECT)
-end
-
--- Destruction condition: only on your next End Phase after this one
+-- Destroy tokens on next End Phase
 function s.descon(e,tp,eg,ep,ev,re,r,rp)
 	local turn=e:GetLabel()
 	local tokens=e:GetLabelObject()
 	return Duel.GetTurnPlayer()==tp and Duel.GetTurnCount()~=turn and tokens:IsExists(Card.IsFaceup,1,nil)
 end
 
--- Destroy the tokens
 function s.desop(e,tp,eg,ep,ev,re,r,rp)
 	local tokens=e:GetLabelObject()
 	local tg=tokens:Filter(Card.IsFaceup,nil)

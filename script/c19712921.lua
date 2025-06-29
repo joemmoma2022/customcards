@@ -1,7 +1,6 @@
---Mantis Egg (Fixed)
-Duel.LoadScript("c420.lua")
+--Mantis Egg (Field Spell)
 local s,id=GetID()
-local TOKEN_BABY_MANTIS=511009033
+local TOKEN_BABY_MANTIS=19712975
 
 function s.initial_effect(c)
 	-- Activate only if you control a "Mantis" monster
@@ -36,19 +35,16 @@ function s.initial_effect(c)
 end
 s.listed_series={0x535}
 
--- You must control a face-up "Mantis" monster
 function s.condition(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsMantis),tp,LOCATION_MZONE,0,1,nil)
+	return Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsSetCard,0x535),tp,LOCATION_MZONE,0,1,nil)
 end
 
--- Only on your Standby Phase
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.IsTurnPlayer(tp)
 end
 
--- Targeting: Check if you can summon at least 1 token
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
-	local ct = Duel.GetMatchingGroupCount(nil,tp,0,LOCATION_MZONE,nil)
+	local ct = Duel.GetMatchingGroupCount(aux.TRUE,tp,0,LOCATION_MZONE,nil)
 	local ft = Duel.GetLocationCount(tp,LOCATION_MZONE)
 	if ft < ct then ct = ft end
 	if chk==0 then
@@ -59,10 +55,9 @@ function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,ct,tp,0)
 end
 
--- Summon the tokens and register end-phase destruction
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	local ft = Duel.GetLocationCount(tp,LOCATION_MZONE)
-	local ct = Duel.GetMatchingGroupCount(nil,tp,0,LOCATION_MZONE,nil)
+	local ct = Duel.GetMatchingGroupCount(aux.TRUE,tp,0,LOCATION_MZONE,nil)
 	if ft < ct then ct = ft end
 	if ct <= 0 then return end
 	if not Duel.IsPlayerCanSpecialSummonMonster(tp,TOKEN_BABY_MANTIS,0x535,TYPES_TOKEN,500,500,1,RACE_INSECT,ATTRIBUTE_WIND) then return end
@@ -70,7 +65,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	for i=1,ct do
 		local token=Duel.CreateToken(tp,TOKEN_BABY_MANTIS)
 		if Duel.SpecialSummonStep(token,0,tp,tp,false,false,POS_FACEUP) then
-			-- Destroy token during End Phase
+			-- Auto-destroy at end phase (forced)
 			local e1=Effect.CreateEffect(e:GetHandler())
 			e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 			e1:SetCode(EVENT_PHASE+PHASE_END)
@@ -90,6 +85,7 @@ function s.descon(e,tp,eg,ep,ev,re,r,rp)
 	local tc=e:GetLabelObject()
 	return tc and tc:IsOnField()
 end
+
 function s.desop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=e:GetLabelObject()
 	if tc and tc:IsOnField() then
@@ -97,13 +93,14 @@ function s.desop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- ATK boost: +500 per Baby Mantis Token on the field
 function s.atktg(e,c)
 	return c:IsFaceup() and c:IsSetCard(0x535)
 end
+
 function s.atkval(e,c)
 	return Duel.GetMatchingGroupCount(s.tokenfilter,c:GetControler(),LOCATION_MZONE,LOCATION_MZONE,nil)*500
 end
+
 function s.tokenfilter(c)
 	return c:IsFaceup() and c:IsCode(TOKEN_BABY_MANTIS)
 end
