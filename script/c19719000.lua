@@ -4,7 +4,7 @@ local WORM_SPEED_ID=19712874
 function s.initial_effect(c)
 	aux.AddSkillProcedure(c,1,false,s.flipcon,s.flipop,1)
 
-	-- Startup flip and operation
+	-- Startup: Trigger once at the beginning of the Duel
 	local e1=Effect.CreateEffect(c)
 	e1:SetProperty(EFFECT_FLAG_UNCOPYABLE+EFFECT_FLAG_CANNOT_DISABLE)
 	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
@@ -19,7 +19,10 @@ function s.op(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SKILL_FLIP,tp,id|(1<<32))
 	Duel.Hint(HINT_CARD,tp,id)
 
-	-- You can add startup effects here if needed, for example:
+	-- Set only the user's LP to 8000
+	Duel.SetLP(tp,8000)
+
+	-- Optional: generate token or startup bonus
 	-- local token=Duel.CreateToken(tp,WORM_SPEED_ID)
 	-- Duel.SendtoHand(token,tp,REASON_RULE)
 	-- Duel.ConfirmCards(1-tp,token)
@@ -30,9 +33,9 @@ function s.spellfilter(c)
 end
 
 function s.flipcon(e,tp,eg,ep,ev,re,r,rp)
-	return aux.CanActivateSkill(tp) -- Ensures skill can be activated now
-		and Duel.GetTurnPlayer()==tp -- Your turn only
-		and Duel.GetFlagEffect(tp,id)<2 -- Twice per duel max
+	return aux.CanActivateSkill(tp)
+		and Duel.GetTurnPlayer()==tp
+		and Duel.GetFlagEffect(tp,id)<2
 		and Duel.IsExistingMatchingCard(s.spellfilter,tp,LOCATION_HAND,0,1,nil)
 end
 
@@ -44,6 +47,6 @@ function s.flipop(e,tp,eg,ep,ev,re,r,rp)
 		local token=Duel.CreateToken(tp,WORM_SPEED_ID)
 		Duel.SendtoHand(token,tp,REASON_RULE)
 		Duel.ConfirmCards(1-tp,token)
-		Duel.RegisterFlagEffect(tp,id,0,0,1) -- Registers usage for twice per duel
+		Duel.RegisterFlagEffect(tp,id,0,0,1)
 	end
 end
