@@ -1,10 +1,10 @@
 -- Fusion Parasite + Number 2: Ninja Shadow Mosquito
--- Custom Fusion Monster Script by You
+-- Custom Fusion Monster Script
 local s,id=GetID()
 
 function s.initial_effect(c)
-	-- Fusion Material
 	c:EnableReviveLimit()
+	c:EnableCounterPermit(0x1101)
 	Fusion.AddProcMix(c,true,true,6205579,32453837)
 
 	-- Place Hallucination Counters on Fusion Summon
@@ -61,26 +61,27 @@ function s.ctcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsSummonType(SUMMON_TYPE_FUSION)
 end
 
--- Place Hallucination Counters one by one based on Insects in GY
+-- Prompt for each Hallucination Counter
 function s.ctop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local ct=Duel.GetMatchingGroupCount(Card.IsRace,tp,LOCATION_GRAVE,0,nil,RACE_INSECT)
 	if ct==0 then return end
-	local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,0,LOCATION_MZONE,nil)
+	local g=Duel.GetMatchingGroup(Card.IsCanAddCounter,tp,0,LOCATION_MZONE,nil,0x1101,1)
 	if #g==0 then return end
 
 	for i=1,ct do
-		if #g==0 then break end
-		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
-		local sg=g:Select(tp,1,1,nil)
-		local tc=sg:GetFirst()
-		if tc and tc:IsFaceup() and tc:IsRelateToEffect(e) then
-			tc:AddCounter(0x1101,1)
+		if Duel.SelectYesNo(tp, aux.Stringid(id, 2)) then
+			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
+			local tg=g:Select(tp,1,1,nil)
+			local tc=tg:GetFirst()
+			if tc and tc:IsFaceup() and tc:IsCanAddCounter(0x1101,1) then
+				tc:AddCounter(0x1101,1)
+			end
 		end
 	end
 end
 
--- Gain ATK equal to total Hallucination Counters x1000
+-- Gain ATK = 1000 x total Hallucination Counters
 function s.atkval(e,c)
 	local g=Duel.GetMatchingGroup(Card.IsFaceup,c:GetControler(),LOCATION_ONFIELD,LOCATION_ONFIELD,nil)
 	local ct=0
@@ -90,7 +91,7 @@ function s.atkval(e,c)
 	return ct*1000
 end
 
--- Burn condition: at least 1 counter on field
+-- Burn condition: 1 or more Hallucination Counters exist
 function s.burncon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.IsExistingMatchingCard(Card.HasCounter,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil,0x1101,1)
 end
@@ -101,7 +102,7 @@ function s.burncost(e,tp,eg,ep,ev,re,r,rp,chk)
 	Duel.RemoveCounter(tp,1,1,0x1101,1,REASON_COST)
 end
 
--- Burn target: total counters x100 damage
+-- Burn target: total counters x100
 function s.burntg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local ct=Duel.GetCounter(tp,1,1,0x1101)
 	if chk==0 then return ct>0 end
