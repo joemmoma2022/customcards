@@ -8,6 +8,7 @@ function s.initial_effect(c)
 	e1:SetCondition(s.condition)
 	e1:SetOperation(s.activate)
 	c:RegisterEffect(e1)
+
 	-- Banish instead of sending to GY
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
@@ -18,7 +19,7 @@ function s.initial_effect(c)
 	c:RegisterEffect(e2)
 end
 
--- Can only activate during your opponent's turn
+-- Only during opponent's turn
 function s.condition(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetTurnPlayer()~=tp
 end
@@ -26,18 +27,16 @@ end
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	local opp=Duel.GetTurnPlayer()
 
-	-- Skip all of opponent's phases to end their turn completely
+	-- Skip phases up to End Phase
 	Duel.SkipPhase(opp, PHASE_DRAW,    RESET_PHASE+PHASE_END, 1)
 	Duel.SkipPhase(opp, PHASE_STANDBY, RESET_PHASE+PHASE_END, 1)
 	Duel.SkipPhase(opp, PHASE_MAIN1,   RESET_PHASE+PHASE_END, 1)
 	Duel.SkipPhase(opp, PHASE_BATTLE,  RESET_PHASE+PHASE_END, 1, 1)
 	Duel.SkipPhase(opp, PHASE_MAIN2,   RESET_PHASE+PHASE_END, 1)
-	Duel.SkipPhase(opp, PHASE_END,     RESET_PHASE+PHASE_END, 1)
+	-- DO NOT skip PHASE_END
 
-	-- Resume on your next Draw Phase (do NOT skip Draw Phase)
-	Duel.SkipPhase(tp, PHASE_STANDBY, RESET_PHASE+PHASE_END, 1)
 
-	-- You draw 2 cards instead of 1 on your next Draw Phase
+	-- Draw 2 cards instead of 1 on your next Draw Phase
 	local e2=Effect.CreateEffect(e:GetHandler())
 	e2:SetType(EFFECT_TYPE_FIELD)
 	e2:SetCode(EFFECT_DRAW_COUNT)
