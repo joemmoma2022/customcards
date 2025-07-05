@@ -19,9 +19,6 @@ function s.op(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SKILL_FLIP,tp,id|(1<<32))
 	Duel.Hint(HINT_CARD,tp,id)
 
-	-- Set only the user's LP to 8000
-	Duel.SetLP(tp,8000)
-
 	-- Optional: generate token or startup bonus
 	-- local token=Duel.CreateToken(tp,WORM_SPEED_ID)
 	-- Duel.SendtoHand(token,tp,REASON_RULE)
