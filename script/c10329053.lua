@@ -1,4 +1,3 @@
---Binding Shackles
 local s,id=GetID()
 function s.initial_effect(c)
     --Persistent procedure: target 1 opponent's monster
