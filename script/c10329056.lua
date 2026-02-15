@@ -1,4 +1,3 @@
---Summoner's Archive
 local s,id=GetID()
 function s.initial_effect(c)
     --Activate from hand and add up to 15 named cards from outside the duel
