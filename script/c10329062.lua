@@ -1,4 +1,3 @@
---Binding Suppression Equip
 local s,id=GetID()
 function s.initial_effect(c)
 	--Activate and equip to opponent's monster
