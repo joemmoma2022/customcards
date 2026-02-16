@@ -4,7 +4,7 @@ local COUNTER_BOSS_ACTION=0x2319
 function s.initial_effect(c)
 	c:EnableCounterPermit(COUNTER_BOSS_ACTION)
 
-	-- Unaffected by other card effects (your spell itself)
+	-- Unaffected by other card effects
 	local e_immune=Effect.CreateEffect(c)
 	e_immune:SetType(EFFECT_TYPE_SINGLE)
 	e_immune:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
@@ -12,6 +12,16 @@ function s.initial_effect(c)
 	e_immune:SetCode(EFFECT_IMMUNE_EFFECT)
 	e_immune:SetValue(s.efilter)
 	c:RegisterEffect(e_immune)
+
+	-- Halve ALL damage you take (battle + effect)
+	local e_dmg=Effect.CreateEffect(c)
+	e_dmg:SetType(EFFECT_TYPE_FIELD)
+	e_dmg:SetCode(EFFECT_CHANGE_DAMAGE)
+	e_dmg:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
+	e_dmg:SetRange(LOCATION_SZONE)
+	e_dmg:SetTargetRange(1,0)
+	e_dmg:SetValue(s.damval)
+	c:RegisterEffect(e_dmg)
 
 	-- Skip all your Draw Phases
 	local e_skip=Effect.CreateEffect(c)
@@ -21,6 +31,15 @@ function s.initial_effect(c)
 	e_skip:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
 	e_skip:SetTargetRange(1,0)
 	c:RegisterEffect(e_skip)
+
+	-- Your monsters cannot be destroyed by battle
+	local e_protect=Effect.CreateEffect(c)
+	e_protect:SetType(EFFECT_TYPE_FIELD)
+	e_protect:SetCode(EFFECT_INDESTRUCTABLE_BATTLE)
+	e_protect:SetRange(LOCATION_SZONE)
+	e_protect:SetTargetRange(LOCATION_MZONE,0)
+	e_protect:SetValue(1)
+	c:RegisterEffect(e_protect)
 
 	-- During your Standby Phase: shuffle your hand into the Deck
 	local e_shufflehand=Effect.CreateEffect(c)
@@ -52,7 +71,7 @@ function s.initial_effect(c)
 	e_gyeffect:SetOperation(s.shufflegy_op)
 	c:RegisterEffect(e_gyeffect)
 
-	-- Each End Phase (resolves once): monsters lose 500 ATK
+	-- Each End Phase: monsters lose 500 ATK
 	local e_end=Effect.CreateEffect(c)
 	e_end:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_F)
 	e_end:SetCode(EVENT_PHASE+PHASE_END)
@@ -60,6 +79,13 @@ function s.initial_effect(c)
 	e_end:SetCountLimit(1)
 	e_end:SetOperation(s.endphase_op)
 	c:RegisterEffect(e_end)
+end
+
+
+function s.damval(e,re,dam,r,rp,rc)
+	if dam then
+		return dam/2
+	end
 end
 
 -- Spell immunity filter
@@ -92,10 +118,10 @@ function s.shufflegy_op(e,tp)
 	end
 end
 
--- End Phase ATK loss only
+-- End Phase ATK loss
 function s.endphase_op(e,tp)
 	local mg=Duel.GetMatchingGroup(Card.IsFaceup,tp,LOCATION_MZONE,0,nil)
-	for tc in mg:Iter() do
+	for tc in aux.Next(mg) do
 		local e1=Effect.CreateEffect(e:GetHandler())
 		e1:SetType(EFFECT_TYPE_SINGLE)
 		e1:SetCode(EFFECT_UPDATE_ATTACK)
