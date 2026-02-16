@@ -1,6 +1,6 @@
 local s,id=GetID()
 
-local SET_LP_SELF = 3000
+local SET_LP_SELF = 6750
 
 function s.initial_effect(c)
 	-- Auto trigger Turn 1 Standby Phase
