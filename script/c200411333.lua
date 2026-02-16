@@ -16,19 +16,6 @@ function s.initial_effect(c)
 	e1:SetRange(0x5f)
 	e1:SetOperation(s.startup_op)
 	c:RegisterEffect(e1)
-
-	-- Halve all damage
-	local e2=Effect.CreateEffect(c)
-	e2:SetType(EFFECT_TYPE_FIELD)
-	e2:SetCode(EFFECT_CHANGE_DAMAGE)
-	e2:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-	e2:SetTargetRange(1,0)
-	e2:SetValue(s.damval)
-	c:RegisterEffect(e2)
-end
-
-function s.damval(e,re,val,r,rp,rc)
-	return math.ceil(val/2)
 end
 
 function s.startup_op(e,tp,eg,ep,ev,re,r,rp)
@@ -37,23 +24,27 @@ function s.startup_op(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SKILL_FLIP,tp,id|(1<<32))
 	Duel.Hint(HINT_CARD,tp,id)
 
-	-- Special Summon Millennium Golem from hand or deck
+	-- Special Summon Millennium Golem from Hand OR Deck
 	if Duel.GetLocationCount(tp,LOCATION_MZONE)>0 then
 		local g=Duel.GetMatchingGroup(function(tc)
-			return tc:IsCode(GOLEM) and tc:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP_ATTACK)
+			return tc:IsCode(GOLEM)
+				and tc:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP_ATTACK)
 		end,tp,LOCATION_HAND+LOCATION_DECK,0,nil)
+
 		if #g>0 then
 			Duel.SpecialSummon(g:GetFirst(),0,tp,tp,false,false,POS_FACEUP_ATTACK)
 		end
 	end
 
-	-- Place "Stone Golem's Actions" from outside the duel
-	local tracker=Duel.CreateToken(tp,ACTION_ID)
-	if tracker and Duel.GetLocationCount(tp,LOCATION_SZONE)>0 then
-		Duel.MoveToField(tracker,tp,tp,LOCATION_SZONE,POS_FACEUP,true)
+	-- Place "Stone Golem's Actions" from outside the Duel
+	if Duel.GetLocationCount(tp,LOCATION_SZONE)>0 then
+		local tracker=Duel.CreateToken(tp,ACTION_ID)
+		if tracker then
+			Duel.MoveToField(tracker,tp,tp,LOCATION_SZONE,POS_FACEUP,true)
+		end
 	end
 
-	-- Resummon Millennium Golem if it leaves the field (any zone)
+	-- Resummon Millennium Golem if it leaves the field
 	local e_resum=Effect.CreateEffect(c)
 	e_resum:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 	e_resum:SetCode(EVENT_LEAVE_FIELD)
@@ -62,21 +53,27 @@ function s.startup_op(e,tp,eg,ep,ev,re,r,rp)
 	Duel.RegisterEffect(e_resum,tp)
 end
 
+
 function s.check_leave(e,tp,eg,ep,ev,re,r,rp)
 	local p=e:GetLabel()
+
 	for tc in aux.Next(eg) do
 		if tc:IsPreviousControler(p)
 			and tc:IsPreviousLocation(LOCATION_ONFIELD)
 			and tc:IsCode(GOLEM) then
 
-			if Duel.GetLocationCount(p,LOCATION_MZONE)>0 then
-				local g=Duel.GetMatchingGroup(function(c)
-					return c:IsCode(GOLEM) and c:IsCanBeSpecialSummoned(e,0,p,false,false,POS_FACEUP_ATTACK)
-				end,p,LOCATION_GRAVE+LOCATION_REMOVED,0,nil)
-				if #g>0 then
-					Duel.Hint(HINT_CARD,0,id)
-					Duel.SpecialSummon(g:GetFirst(),0,p,p,false,false,POS_FACEUP_ATTACK)
-				end
+			if Duel.GetLocationCount(p,LOCATION_MZONE)<=0 then return end
+
+			local g=Duel.GetMatchingGroup(function(c)
+				return c:IsCode(GOLEM)
+					and c:IsCanBeSpecialSummoned(e,0,p,false,false,POS_FACEUP_ATTACK)
+			end,p,
+			LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE+LOCATION_REMOVED,
+			0,nil)
+
+			if #g>0 then
+				Duel.Hint(HINT_CARD,0,id)
+				Duel.SpecialSummon(g:GetFirst(),0,p,p,false,false,POS_FACEUP_ATTACK)
 			end
 		end
 	end
