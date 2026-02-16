@@ -11,7 +11,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.operation)
 	c:RegisterEffect(e1)
 
-	-- Equip limit (only opponent's monster)
+	-- Equip limit
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_SINGLE)
 	e2:SetCode(EFFECT_EQUIP_LIMIT)
@@ -19,14 +19,14 @@ function s.initial_effect(c)
 	e2:SetValue(s.eqlimit)
 	c:RegisterEffect(e2)
 
-	-- Equipped monster cannot attack
+	-- Cannot attack
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_EQUIP)
 	e3:SetCode(EFFECT_CANNOT_ATTACK)
 	e3:SetValue(1)
 	c:RegisterEffect(e3)
 
-	-- Negate equipped monster's effects
+	-- Negate effects
 	local e4=Effect.CreateEffect(c)
 	e4:SetType(EFFECT_TYPE_EQUIP)
 	e4:SetCode(EFFECT_DISABLE)
@@ -36,17 +36,16 @@ function s.initial_effect(c)
 	e5:SetCode(EFFECT_DISABLE_EFFECT)
 	c:RegisterEffect(e5)
 
-	-- Lose 500 ATK during each End Phase (FIXED)
+	-- -500 End Phase Effect
 	local e6=Effect.CreateEffect(c)
 	e6:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_F)
 	e6:SetCode(EVENT_PHASE+PHASE_END)
 	e6:SetRange(LOCATION_SZONE)
 	e6:SetCountLimit(1)
-	e6:SetCondition(s.atkcon)
 	e6:SetOperation(s.atkop)
 	c:RegisterEffect(e6)
 
-	-- Banish when leaves the field
+	-- Banish when leaves
 	local e7=Effect.CreateEffect(c)
 	e7:SetType(EFFECT_TYPE_SINGLE)
 	e7:SetCode(EFFECT_LEAVE_FIELD_REDIRECT)
@@ -91,21 +90,16 @@ function s.eqlimit(e,c)
 	return c:IsControler(1-e:GetHandlerPlayer())
 end
 
--- End Phase condition (prevents looping)
-function s.atkcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.GetTurnPlayer()~=nil
-end
-
--- ATK reduction (safe)
+-- Permanent stacking reduction
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local ec=c:GetEquipTarget()
-	if ec and ec:IsFaceup() and ec:IsRelateToEffect(e) then
-		local e1=Effect.CreateEffect(c)
-		e1:SetType(EFFECT_TYPE_SINGLE)
-		e1:SetCode(EFFECT_UPDATE_ATTACK)
-		e1:SetValue(-500)
-		e1:SetReset(RESET_EVENT+RESETS_STANDARD)
-		ec:RegisterEffect(e1)
-	end
+	if not ec or not ec:IsFaceup() then return end
+
+	local e1=Effect.CreateEffect(c)
+	e1:SetType(EFFECT_TYPE_SINGLE)
+	e1:SetCode(EFFECT_UPDATE_ATTACK)
+	e1:SetValue(-500)
+	e1:SetReset(RESET_EVENT+RESETS_STANDARD)
+	ec:RegisterEffect(e1)
 end
