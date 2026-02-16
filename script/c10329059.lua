@@ -11,7 +11,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.operation)
 	c:RegisterEffect(e1)
 
-	-- Equip limit (only to opponent's monster)
+	-- Equip limit (only opponent's monster)
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_SINGLE)
 	e2:SetCode(EFFECT_EQUIP_LIMIT)
@@ -33,11 +33,12 @@ function s.initial_effect(c)
 	e4:SetValue(1)
 	c:RegisterEffect(e4)
 
-	-- Lose 500 ATK during each End Phase
+	-- -500 ATK each End Phase
 	local e5=Effect.CreateEffect(c)
-	e5:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+	e5:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_F)
 	e5:SetCode(EVENT_PHASE+PHASE_END)
 	e5:SetRange(LOCATION_SZONE)
+	e5:SetCountLimit(1)
 	e5:SetOperation(s.atkop)
 	c:RegisterEffect(e5)
 
@@ -77,21 +78,21 @@ function s.operation(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Equip(tp,c,tc)
 end
 
--- Equip limit (must stay on opponent's monster)
+-- Equip limit
 function s.eqlimit(e,c)
 	return c:IsControler(1-e:GetHandlerPlayer())
 end
 
--- ATK reduction each End Phase
+-- Stacking ATK reduction
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local ec=c:GetEquipTarget()
-	if ec and ec:IsFaceup() then
-		local e1=Effect.CreateEffect(c)
-		e1:SetType(EFFECT_TYPE_SINGLE)
-		e1:SetCode(EFFECT_UPDATE_ATTACK)
-		e1:SetValue(-500)
-		e1:SetReset(RESET_EVENT+RESETS_STANDARD)
-		ec:RegisterEffect(e1)
-	end
+	if not ec or not ec:IsFaceup() then return end
+
+	local e1=Effect.CreateEffect(c)
+	e1:SetType(EFFECT_TYPE_SINGLE)
+	e1:SetCode(EFFECT_UPDATE_ATTACK)
+	e1:SetValue(-500)
+	e1:SetReset(RESET_EVENT+RESETS_STANDARD)
+	ec:RegisterEffect(e1)
 end
