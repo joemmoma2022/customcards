@@ -1,6 +1,6 @@
 local s,id=GetID()
 
-local SET_LP_SELF = 6500
+local SET_LP_SELF = 6300
 
 function s.initial_effect(c)
 	-- Auto trigger Turn 1 Standby Phase
@@ -32,4 +32,5 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	-- Banish this card face-down from wherever it is
 	Duel.Remove(c,POS_FACEDOWN,REASON_EFFECT)
 end
+
 
