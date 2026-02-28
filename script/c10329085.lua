@@ -1,4 +1,3 @@
---Assault Bind Armor
 local s,id=GetID()
 function s.initial_effect(c)
 	--Activate and equip to lowest ATK opponent monster
@@ -103,4 +102,5 @@ end
 --Burn operation
 function s.damop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Damage(1-tp,500,REASON_EFFECT)
+
 end
