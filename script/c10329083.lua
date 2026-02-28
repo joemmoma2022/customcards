@@ -1,4 +1,3 @@
---Mercury Spike
 local s,id=GetID()
 
 function s.initial_effect(c)
@@ -81,4 +80,5 @@ end
 -- Dynamic ATK/DEF reduction
 function s.atkval(e,c)
     return -c:GetCounter(0x8830)*250
+
 end
