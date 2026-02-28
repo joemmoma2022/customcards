@@ -1,7 +1,7 @@
+--Binding Suppression Equip
 local s,id=GetID()
-
 function s.initial_effect(c)
-	-- Activate and equip to opponent's monster
+	--Activate and equip to opponent's monster
 	local e1=Effect.CreateEffect(c)
 	e1:SetCategory(CATEGORY_EQUIP)
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
@@ -11,7 +11,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.operation)
 	c:RegisterEffect(e1)
 
-	-- Equip limit
+	--Equip limit
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_SINGLE)
 	e2:SetCode(EFFECT_EQUIP_LIMIT)
@@ -19,33 +19,30 @@ function s.initial_effect(c)
 	e2:SetValue(s.eqlimit)
 	c:RegisterEffect(e2)
 
-	-- Cannot attack
+	--Equipped monster cannot attack
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_EQUIP)
 	e3:SetCode(EFFECT_CANNOT_ATTACK)
-	e3:SetValue(1)
 	c:RegisterEffect(e3)
 
-	-- Negate effects
+	--Negate equipped monster's effects
 	local e4=Effect.CreateEffect(c)
 	e4:SetType(EFFECT_TYPE_EQUIP)
 	e4:SetCode(EFFECT_DISABLE)
 	c:RegisterEffect(e4)
-
 	local e5=e4:Clone()
 	e5:SetCode(EFFECT_DISABLE_EFFECT)
 	c:RegisterEffect(e5)
 
-	-- -500 End Phase Effect
+	--Lose 500 ATK during each End Phase
 	local e6=Effect.CreateEffect(c)
-	e6:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_F)
+	e6:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 	e6:SetCode(EVENT_PHASE+PHASE_END)
 	e6:SetRange(LOCATION_SZONE)
-	e6:SetCountLimit(1)
 	e6:SetOperation(s.atkop)
 	c:RegisterEffect(e6)
 
-	-- Banish when leaves
+	--Banish when leaves the field
 	local e7=Effect.CreateEffect(c)
 	e7:SetType(EFFECT_TYPE_SINGLE)
 	e7:SetCode(EFFECT_LEAVE_FIELD_REDIRECT)
@@ -54,52 +51,39 @@ function s.initial_effect(c)
 	c:RegisterEffect(e7)
 end
 
--- Target opponent's face-up monster
-function s.filter(c)
-	return c:IsFaceup()
-end
-
+--Target opponent's monster
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then
-		return chkc:IsLocation(LOCATION_MZONE)
-			and chkc:IsControler(1-tp)
-			and s.filter(chkc)
-	end
+	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(1-tp) end
 	if chk==0 then
-		return Duel.IsExistingTarget(s.filter,tp,0,LOCATION_MZONE,1,nil)
+		return Duel.IsExistingTarget(aux.FaceupFilter(Card.IsControler,1-tp),tp,0,LOCATION_MZONE,1,nil)
 	end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_EQUIP)
-	Duel.SelectTarget(tp,s.filter,tp,0,LOCATION_MZONE,1,1,nil)
+	Duel.SelectTarget(tp,aux.FaceupFilter(Card.IsControler,1-tp),tp,0,LOCATION_MZONE,1,1,nil)
 end
 
--- Equip operation
+--Equip operation
 function s.operation(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local tc=Duel.GetFirstTarget()
-	if not c:IsRelateToEffect(e)
-		or not tc
-		or not tc:IsRelateToEffect(e)
-		or tc:IsControler(tp) then
-		return
-	end
+	if not c:IsRelateToEffect(e) or not tc or not tc:IsRelateToEffect(e) then return end
 	Duel.Equip(tp,c,tc)
 end
 
--- Equip limit
+--Equip limit
 function s.eqlimit(e,c)
 	return c:IsControler(1-e:GetHandlerPlayer())
 end
 
--- Permanent stacking reduction
+--ATK reduction
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local ec=c:GetEquipTarget()
-	if not ec or not ec:IsFaceup() then return end
-
-	local e1=Effect.CreateEffect(c)
-	e1:SetType(EFFECT_TYPE_SINGLE)
-	e1:SetCode(EFFECT_UPDATE_ATTACK)
-	e1:SetValue(-500)
-	e1:SetReset(RESET_EVENT+RESETS_STANDARD)
-	ec:RegisterEffect(e1)
+	if ec then
+		local e1=Effect.CreateEffect(c)
+		e1:SetType(EFFECT_TYPE_SINGLE)
+		e1:SetCode(EFFECT_UPDATE_ATTACK)
+		e1:SetValue(-500)
+		e1:SetReset(RESET_EVENT+RESETS_STANDARD)
+		ec:RegisterEffect(e1)
+	end
 end

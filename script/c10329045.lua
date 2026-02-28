@@ -55,15 +55,15 @@ function s.operation(e,tp,eg,ep,ev,re,r,rp)
 		e1:SetReset(RESET_EVENT|RESETS_STANDARD)
 		tc:RegisterEffect(e1)
 
-		--Increase ATK by 300
+		--Increase ATK by 500
 		local e2=Effect.CreateEffect(c)
 		e2:SetType(EFFECT_TYPE_EQUIP)
 		e2:SetCode(EFFECT_UPDATE_ATTACK)
-		e2:SetValue(300)
+		e2:SetValue(500)
 		e2:SetReset(RESET_EVENT|RESETS_STANDARD)
 		c:RegisterEffect(e2)
 
-		--Trigger effect: deal 400 damage before damage calculation
+		--Trigger effect: deal 1000 damage before damage calculation
 		local e3=Effect.CreateEffect(c)
 		e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_F)
 		e3:SetCode(EVENT_PRE_DAMAGE_CALCULATE)
@@ -89,11 +89,11 @@ end
 function s.damtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return true end
 	Duel.SetTargetPlayer(1-tp)
-	Duel.SetTargetParam(400)
-	Duel.SetOperationInfo(0,CATEGORY_DAMAGE,nil,0,1-tp,400)
+	Duel.SetTargetParam(700)
+	Duel.SetOperationInfo(0,CATEGORY_DAMAGE,nil,0,1-tp,700)
 end
 
---Operation: deal 400 damage
+--Operation: deal 700 damage
 function s.damop(e,tp,eg,ep,ev,re,r,rp)
 	local p,d=Duel.GetChainInfo(0,CHAININFO_TARGET_PLAYER,CHAININFO_TARGET_PARAM)
 	Duel.Damage(p,d,REASON_EFFECT)

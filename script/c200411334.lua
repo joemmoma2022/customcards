@@ -1,8 +1,8 @@
--- Millennium Golem Skill
+-- Assault Lion Skill
 local s,id=GetID()
 
-local GOLEM=47986555
-local ACTION_ID=200412333
+local LION_ID=511002442
+local ACTION_ID=200412334
 
 function s.initial_effect(c)
 	aux.AddSkillProcedure(c,1,false,nil,nil)
@@ -16,29 +16,6 @@ function s.initial_effect(c)
 	e1:SetRange(0x5f)
 	e1:SetOperation(s.startup_op)
 	c:RegisterEffect(e1)
-
-	-- Halve EFFECT damage you take
-	local e2=Effect.CreateEffect(c)
-	e2:SetType(EFFECT_TYPE_FIELD)
-	e2:SetCode(EFFECT_CHANGE_DAMAGE)
-	e2:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-	e2:SetRange(0x5f)
-	e2:SetTargetRange(1,0)
-	e2:SetValue(s.damval)
-	c:RegisterEffect(e2)
-
-	-- Halve BATTLE damage you take
-	local e3=e2:Clone()
-	e3:SetCode(EFFECT_CHANGE_BATTLE_DAMAGE)
-	c:RegisterEffect(e3)
-end
-
--- Damage halving function
-function s.damval(e,re,val,r,rp,rc)
-	if val>0 then
-		return math.floor(val/2)
-	end
-	return val
 end
 
 function s.startup_op(e,tp,eg,ep,ev,re,r,rp)
@@ -47,10 +24,10 @@ function s.startup_op(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SKILL_FLIP,tp,id|(1<<32))
 	Duel.Hint(HINT_CARD,tp,id)
 
-	-- Special Summon Millennium Golem from hand or deck
+	-- Special Summon Assault Lion from hand or deck
 	if Duel.GetLocationCount(tp,LOCATION_MZONE)>0 then
 		local g=Duel.GetMatchingGroup(function(tc)
-			return tc:IsCode(GOLEM)
+			return tc:IsCode(LION_ID)
 				and tc:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP_ATTACK)
 		end,tp,LOCATION_HAND+LOCATION_DECK,0,nil)
 
@@ -59,7 +36,7 @@ function s.startup_op(e,tp,eg,ep,ev,re,r,rp)
 		end
 	end
 
-	-- Place "Stone Golem's Actions" from outside the duel
+	-- Place "Assault Lion's Actions" from outside the Duel
 	if Duel.GetLocationCount(tp,LOCATION_SZONE)>0 then
 		local tracker=Duel.CreateToken(tp,ACTION_ID)
 		if tracker then
@@ -67,7 +44,7 @@ function s.startup_op(e,tp,eg,ep,ev,re,r,rp)
 		end
 	end
 
-	-- Resummon Millennium Golem if it leaves the field
+	-- Resummon Assault Lion if it leaves the field
 	local e_resum=Effect.CreateEffect(c)
 	e_resum:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 	e_resum:SetCode(EVENT_LEAVE_FIELD)
@@ -82,11 +59,11 @@ function s.check_leave(e,tp,eg,ep,ev,re,r,rp)
 	for tc in aux.Next(eg) do
 		if tc:IsPreviousControler(p)
 			and tc:IsPreviousLocation(LOCATION_ONFIELD)
-			and tc:IsCode(GOLEM) then
+			and tc:IsCode(LION_ID) then
 
 			if Duel.GetLocationCount(p,LOCATION_MZONE)>0 then
 				local g=Duel.GetMatchingGroup(function(c)
-					return c:IsCode(GOLEM)
+					return c:IsCode(LION_ID)
 						and c:IsCanBeSpecialSummoned(e,0,p,false,false,POS_FACEUP_ATTACK)
 				end,p,LOCATION_GRAVE+LOCATION_REMOVED,0,nil)
 
