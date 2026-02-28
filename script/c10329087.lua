@@ -18,9 +18,10 @@ function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
-	Duel.Damage(1-tp,500,REASON_EFFECT)
+	Duel.Damage(1-tp,100,REASON_EFFECT)
 	local c=e:GetHandler()
 	if c:IsRelateToEffect(e) then
 		Duel.Remove(c,POS_FACEDOWN,REASON_EFFECT)
 	end
 end
+
