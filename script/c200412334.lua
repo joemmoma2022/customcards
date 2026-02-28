@@ -64,6 +64,15 @@ function s.initial_effect(c)
 	e_feast:SetCondition(s.feast_con)
 	e_feast:SetOperation(s.feast_op)
 	c:RegisterEffect(e_feast)
+
+	-- Your monsters cannot be destroyed by battle
+	local e_protect=Effect.CreateEffect(c)
+	e_protect:SetType(EFFECT_TYPE_FIELD)
+	e_protect:SetCode(EFFECT_INDESTRUCTABLE_BATTLE)
+	e_protect:SetRange(LOCATION_SZONE)
+	e_protect:SetTargetRange(LOCATION_MZONE,0)
+	e_protect:SetValue(1)
+	c:RegisterEffect(e_protect)
 end
 
 function s.efilter(e,re)
