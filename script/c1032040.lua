@@ -3,8 +3,8 @@ local COUNTER_GRIMOIRE=0x8960
 local GRIMOIRE_CARD_ID=0x611
 
 s.mana_rewards={
-    [1]={},
-    [2]={10329059, 10329060},
+    [1]={10329087},
+    [2]={10329086},
     [3]={},
     [4]={},
     [5]={},
