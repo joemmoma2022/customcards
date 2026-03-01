@@ -54,12 +54,13 @@ function s.startup_op(e,tp,eg,ep,ev,re,r,rp)
 	Duel.RegisterEffect(e_resum,tp)
 end
 
+
 function s.check_leave(e,tp,eg,ep,ev,re,r,rp)
 	local p=e:GetLabel()
 	for tc in aux.Next(eg) do
 		if tc:IsPreviousControler(p)
 			and tc:IsPreviousLocation(LOCATION_ONFIELD)
-			and tc:IsCode(LION_ID) then
+			and tc:IsCode(GOLEM) then
 
 			if Duel.GetLocationCount(p,LOCATION_MZONE)>0 then
 				local g=Duel.GetMatchingGroup(function(c)
