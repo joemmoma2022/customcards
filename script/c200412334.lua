@@ -73,6 +73,15 @@ function s.initial_effect(c)
 	e_protect:SetTargetRange(LOCATION_MZONE,0)
 	e_protect:SetValue(1)
 	c:RegisterEffect(e_protect)
+	
+	-- During opponent's End Phase: shuffle non-monsters from GY if Deck is empty
+    local e_gyeffect=Effect.CreateEffect(c)
+    e_gyeffect:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+    e_gyeffect:SetCode(EVENT_PHASE+PHASE_END)
+    e_gyeffect:SetRange(LOCATION_SZONE)
+    e_gyeffect:SetCondition(s.shufflegy_con)
+    e_gyeffect:SetOperation(s.shufflegy_op)
+    c:RegisterEffect(e_gyeffect)
 end
 
 function s.efilter(e,re)
@@ -129,6 +138,26 @@ function s.atk_op(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
+-- Opponent's End Phase condition
+function s.shufflegy_con(e,tp,eg,ep,ev,re,r,rp)
+    return Duel.GetTurnPlayer()==1-tp
+        and Duel.GetFieldGroupCount(tp,LOCATION_DECK,0)==0
+        and Duel.IsExistingMatchingCard(s.nonmonsterfilter,tp,LOCATION_GRAVE,0,1,nil)
+end
+
+-- Shuffle non-monster GY cards into Deck
+function s.shufflegy_op(e,tp,eg,ep,ev,re,r,rp)
+    local g=Duel.GetMatchingGroup(s.nonmonsterfilter,tp,LOCATION_GRAVE,0,nil)
+    if #g>0 then
+        Duel.SendtoDeck(g,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)
+        Duel.ShuffleDeck(tp)
+    end
+end
+
+function s.nonmonsterfilter(c)
+    return not c:IsType(TYPE_MONSTER)
+end
+
 -- Feast condition: Assault Lion with less than 1000 ATK
 function s.feast_con(e,tp)
 	return Duel.IsExistingMatchingCard(function(c)
@@ -143,4 +172,5 @@ function s.feast_op(e,tp)
 		Duel.SendtoHand(token,tp,REASON_EFFECT)
 		Duel.ConfirmCards(1-tp,token)
 	end
+
 end
